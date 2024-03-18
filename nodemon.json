@@ -1,0 +1,7 @@
+{
+  "watch": ["src"],
+  "ext": "ts,json",
+  "legacyWatch": true,
+  "inspect": "0.0.0.9229",
+  "exec": "ts-node ./src/index.ts"
+}
