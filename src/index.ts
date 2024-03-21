@@ -1,11 +1,17 @@
 import express from "express";
 import dotenv from "dotenv";
+import passport from "passport";
 import connectDB from "./db/config";
+import router from "./routes";
+import bearer from "./strategies/bearer";
 
 dotenv.config();
 
+passport.use(bearer);
 const app = express();
 app.use(express.json());
+app.use(passport.authenticate("bearer", { session: false }));
+app.use("/", router);
 
 connectDB()
   .then(() => {
