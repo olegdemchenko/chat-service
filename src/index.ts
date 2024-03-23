@@ -7,14 +7,17 @@ import bearer from "./strategies/bearer";
 
 dotenv.config();
 
-passport.use(bearer);
-const app = express();
-app.use(express.json());
-app.use(passport.authenticate("bearer", { session: false }));
-app.use("/", router);
-
 connectDB()
   .then(() => {
+    passport.use(bearer);
+    const app = express();
+    app.use(express.json());
+    app.use(
+      passport.authenticate("bearer", {
+        session: false,
+      }),
+    );
+    app.use(router);
     app.listen(process.env.PORT, () =>
       console.log(`Chat service is listening on port: ${process.env.PORT}`),
     );

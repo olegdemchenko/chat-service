@@ -1,5 +1,5 @@
 import { Strategy as BearerStrategy } from "passport-http-bearer";
-import axios from "axios";
+import axios, { AxiosError } from "axios";
 import { UserInfo } from "../types";
 import User from "../db/models/User";
 
@@ -24,6 +24,9 @@ export default new BearerStrategy(async (token, done) => {
     }
     done(null, user);
   } catch (e) {
+    if (e instanceof AxiosError) {
+      done(null, false);
+    }
     done(e);
   }
 });
