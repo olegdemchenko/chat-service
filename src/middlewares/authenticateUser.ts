@@ -17,10 +17,11 @@ const authenticateUser = async (
         },
       },
     );
-    const { name, email } = userInfo;
-    let user = await UserModel.findOne({ name });
+    const { id, name, email } = userInfo;
+    let user = await UserModel.findOne({ externalId: id });
     if (!user) {
       user = new UserModel({
+        externalId: id,
         name,
         email,
       });
