@@ -1,25 +1,18 @@
-import express from "express";
 import dotenv from "dotenv";
-import passport from "passport";
+import { Server } from "socket.io";
+import { CustomSocket } from "./types";
 import connectDB from "./db/config";
-import router from "./routes";
-import bearer from "./strategies/bearer";
+import authenticateUser from "./middlewares/authenticateUser";
 
 dotenv.config();
 
 connectDB()
   .then(() => {
-    passport.use(bearer);
-    const app = express();
-    app.use(express.json());
-    app.use(
-      passport.authenticate("bearer", {
-        session: false,
-      }),
-    );
-    app.use(router);
-    app.listen(process.env.PORT, () =>
-      console.log(`Chat service is listening on port: ${process.env.PORT}`),
-    );
+    const io = new Server(Number(process.env.PORT!));
+    io.use(authenticateUser);
+    io.on("connection", (socket: CustomSocket) => {
+      console.log(`socket ${socket.id} connected`);
+      console.log("user", socket.user);
+    });
   })
   .catch((e) => console.error(`Server initialization error: ${e}`));
