@@ -34,6 +34,7 @@ module.exports = {
     "@typescript-eslint/no-unsafe-call": ["off"],
     "@typescript-eslint/no-misused-promises": ["off"],
     "import/prefer-default-export": ["off"],
-    "no-param-reassign": ["warn"]
+    "no-param-reassign": ["warn"],
+    "no-underscore-dangle": ["off"]
   },
 };

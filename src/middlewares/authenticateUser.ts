@@ -1,6 +1,6 @@
 import { ExtendedError } from "socket.io/dist/namespace";
 import axios, { AxiosError } from "axios";
-import { CustomSocket, ExternalUserInfo, User } from "../types";
+import { CustomSocket, ExternalUserInfo } from "../types";
 import UserModel from "../db/models/User";
 
 const authenticateUser = async (
@@ -27,7 +27,7 @@ const authenticateUser = async (
       });
       await user.save();
     }
-    socket.user = user as User;
+    socket.data.user = user;
     next();
   } catch (e) {
     const error = e as Error;
