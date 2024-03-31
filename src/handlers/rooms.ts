@@ -4,7 +4,7 @@ import RoomModel from "../db/models/Room";
 import UserModel from "../db/models/User";
 import { CustomSocket, IOServer } from "../types";
 
-const handleConnectToRooms = (socket: CustomSocket) => {
+export const handleConnectToRooms = (socket: CustomSocket) => {
   const {
     user: { rooms },
   } = socket.data;
@@ -16,7 +16,7 @@ const handleConnectToRooms = (socket: CustomSocket) => {
   });
 };
 
-const handleCreateRoom = (
+export const handleCreateRoom = (
   socket: CustomSocket,
   redisClient: RedisClientType,
   io: IOServer,
@@ -48,7 +48,7 @@ const handleCreateRoom = (
   });
 };
 
-const handleLeaveRoom = (socket: CustomSocket) => {
+export const handleLeaveRoom = (socket: CustomSocket) => {
   socket.on("leaveRoom", async (roomId: string) => {
     const { _id } = socket.data.user;
     await UserModel.updateOne({ _id }, { $pull: { rooms: roomId } });
@@ -66,7 +66,7 @@ const handleLeaveRoom = (socket: CustomSocket) => {
   });
 };
 
-const handleAddParticipant = (
+export const handleAddParticipant = (
   socket: CustomSocket,
   redisClient: RedisClientType,
   io: IOServer,
@@ -91,11 +91,4 @@ const handleAddParticipant = (
       }
     },
   );
-};
-
-export {
-  handleConnectToRooms,
-  handleCreateRoom,
-  handleLeaveRoom,
-  handleAddParticipant,
 };
