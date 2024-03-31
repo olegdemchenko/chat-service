@@ -24,6 +24,7 @@ const authenticateUser = async (
         externalId: id,
         name,
         email,
+        rooms: [],
       });
       await user.save();
     }

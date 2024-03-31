@@ -1,11 +1,14 @@
-import { Schema, model, Types } from "mongoose";
+import { Schema, model, Types, HydratedDocument } from "mongoose";
 
-export interface User {
+interface User {
   _id: Types.ObjectId;
   externalId: number;
   name: string;
   email: string | null;
+  rooms: Types.Array<Types.ObjectId>;
 }
+
+export type UserDocument = HydratedDocument<User>;
 
 const userSchema = new Schema<User>({
   externalId: {
@@ -23,6 +26,7 @@ const userSchema = new Schema<User>({
     required: true,
     unique: true,
   },
+  rooms: [{ type: Schema.Types.ObjectId, ref: "Room" }],
 });
 
 export default model<User>("User", userSchema);

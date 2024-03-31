@@ -35,6 +35,8 @@ module.exports = {
     "@typescript-eslint/no-misused-promises": ["off"],
     "import/prefer-default-export": ["off"],
     "no-param-reassign": ["warn"],
-    "no-underscore-dangle": ["off"]
+    "no-underscore-dangle": ["off"],
+    "@typescript-eslint/no-floating-promises": ["warn"],
+    "@typescript-eslint/naming-convention": ["warn"]
   },
 };

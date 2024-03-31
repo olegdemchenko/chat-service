@@ -1,6 +1,6 @@
 import { Socket, Server } from "socket.io";
 import { DefaultEventsMap } from "socket.io/dist/typed-events";
-import { User } from "./db/models/User";
+import { UserDocument } from "./db/models/User";
 
 export interface ExternalUserInfo {
   id: number;
@@ -18,5 +18,5 @@ export type CustomSocket = Socket<
   DefaultEventsMap,
   DefaultEventsMap,
   DefaultEventsMap,
-  { user: User }
+  { user: UserDocument }
 >;
