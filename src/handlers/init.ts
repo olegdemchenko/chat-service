@@ -1,5 +1,6 @@
 import { RedisClientType } from "@redis/client";
 import { CustomSocket } from "../types";
+import RoomModel from "../db/models/Room";
 
 export const handleUpdateUserStatus = async (
   socket: CustomSocket,
@@ -9,5 +10,17 @@ export const handleUpdateUserStatus = async (
 
   socket.on("disconnect", async () => {
     await redisClient.SREM("active_users", socket.data.user._id.toString());
+  });
+};
+
+export const handleSendUserData = (socket: CustomSocket) => {
+  socket.on("getUserData", async (callback) => {
+    const { _id } = socket.data.user;
+    const userRooms = await RoomModel.find({
+      participants: { $elemMatch: { $eq: _id } },
+    })
+      .populate("messages")
+      .populate("participants");
+    callback(userRooms);
   });
 };
