@@ -1,18 +1,9 @@
 import { RedisClientType } from "@redis/client";
 import { CustomSocket, IOServer } from "../types";
-import {
-  handleAddParticipant,
-  handleConnectToRooms,
-  handleCreateRoom,
-  handleLeaveRoom,
-} from "./rooms";
-import { handleFindUsers } from "./search";
-import { handleUpdateUserStatus } from "./init";
-import {
-  handleSendMessage,
-  handleUpdateMessage,
-  handleDeleteMessage,
-} from "./messages";
+import * as roomHandlers from "./rooms";
+import * as searchHandlers from "./search";
+import * as initialHandlers from "./init";
+import * as messageHandlers from "./messages";
 
 const addHandlers = (
   io: IOServer,
@@ -24,15 +15,10 @@ const addHandlers = (
     redisClient: RedisClientType,
     io: IOServer,
   ) => void)[] = [
-    handleUpdateUserStatus,
-    handleFindUsers,
-    handleConnectToRooms,
-    handleCreateRoom,
-    handleLeaveRoom,
-    handleAddParticipant,
-    handleSendMessage,
-    handleUpdateMessage,
-    handleDeleteMessage,
+    ...Object.values(initialHandlers),
+    ...Object.values(searchHandlers),
+    ...Object.values(roomHandlers),
+    ...Object.values(messageHandlers),
   ];
   handlers.forEach((handler) => handler(socket, redisClient, io));
 };
