@@ -4,8 +4,8 @@ services:
       context: .
       target: dev
     ports:
-      - 5000:5000
-      - 9230:9230
+      - ${PORT}:${PORT}
+      - ${DEBUG_PORT}:${DEBUG_PORT}
     environment:
       - PORT=${PORT}
       - DB_URL=${DB_URL}
@@ -24,9 +24,9 @@ services:
       MONGO_INITDB_ROOT_USERNAME: ${DB_USER}
       MONGO_INITDB_ROOT_PASSWORD: ${DB_PASSWORD}
     ports:
-      - 27017:27017
+      - ${DB_PORT}:${DB_PORT}
     expose:
-      - 27017
+      - ${DB_PORT}
     healthcheck:
       test: ["CMD","mongosh", "--eval", "db.adminCommand('ping')"]
       interval: 10s
@@ -37,10 +37,10 @@ services:
     container_name: chat_redis
     image: redis
     restart: always
-    command: --port 6380
+    command: --port ${REDIS_PORT}
     ports:
-      - 6380:6380
+      - ${REDIS_PORT}:${REDIS_PORT}
     expose:
-      - 6380
+      - ${REDIS_PORT}
 volumes:
   chat-db-data:

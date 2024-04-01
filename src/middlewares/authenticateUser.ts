@@ -1,7 +1,10 @@
 import { ExtendedError } from "socket.io/dist/namespace";
 import axios, { AxiosError } from "axios";
+import dotenv from "dotenv";
 import { CustomSocket, ExternalUserInfo } from "../types";
 import UserModel from "../db/models/User";
+
+dotenv.config();
 
 const authenticateUser = async (
   socket: CustomSocket,
@@ -10,7 +13,7 @@ const authenticateUser = async (
   const { token } = socket.handshake.headers;
   try {
     const { data: userInfo } = await axios.get<ExternalUserInfo>(
-      "http://authservice-server-1:443/api/auth/authenticate",
+      process.env.AUTH_SERVICE_URL!,
       {
         headers: {
           Authorization: `Bearer ${token as string}`,
