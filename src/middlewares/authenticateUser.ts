@@ -10,7 +10,7 @@ const authenticateUser = async (
   socket: CustomSocket,
   next: (err?: ExtendedError | undefined) => void,
 ) => {
-  const { token } = socket.handshake.headers;
+  const { token } = socket.handshake.auth;
   try {
     const { data: userInfo } = await axios.get<ExternalUserInfo>(
       process.env.AUTH_SERVICE_URL!,

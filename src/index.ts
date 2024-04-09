@@ -12,7 +12,12 @@ dotenv.config();
 connectDB()
   .then(() => redisClient)
   .then((client) => {
-    const io = new Server(Number(process.env.PORT!));
+    const io = new Server(Number(process.env.PORT!), {
+      cors: {
+        origin: "http://localhost:3000",
+      },
+    });
+
     io.use(authenticateUser);
 
     io.on("connection", (socket: CustomSocket) => {
