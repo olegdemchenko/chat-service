@@ -23,7 +23,6 @@ const userSchema = new Schema<User>({
   },
   email: {
     type: String,
-    required: true,
     unique: true,
   },
   rooms: [{ type: Schema.Types.ObjectId, ref: "Room" }],
