@@ -49,7 +49,11 @@ export const handleUpdateMessage = (socket: CustomSocket) => {
 export const handleDeleteMessage = (socket: CustomSocket) => {
   socket.on("message:delete", async (roomId: string, messageId: string) => {
     await MessageModel.deleteOne({ messageId });
-    await RoomModel.updateOne({ roomId }, { $pull: { messages: messageId } });
+    const message = await MessageModel.findOne({ messageId });
+    await RoomModel.updateOne(
+      { roomId },
+      { $pull: { messages: message!._id } },
+    );
     socket.to(`room:${roomId}`).emit("message:delete", messageId);
   });
 };
