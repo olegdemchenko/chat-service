@@ -1,16 +1,20 @@
 import { Schema, model, Types, HydratedDocument } from "mongoose";
 
 interface User {
-  _id: Types.ObjectId;
+  userId: string;
   externalId: number;
   name: string;
-  email: string | null;
   rooms: Types.Array<Types.ObjectId>;
 }
 
 export type UserDocument = HydratedDocument<User>;
 
 const userSchema = new Schema<User>({
+  userId: {
+    type: String,
+    required: true,
+    unique: true,
+  },
   externalId: {
     type: Number,
     required: true,
@@ -19,10 +23,6 @@ const userSchema = new Schema<User>({
   name: {
     type: String,
     required: true,
-    unique: true,
-  },
-  email: {
-    type: String,
     unique: true,
   },
   rooms: [{ type: Schema.Types.ObjectId, ref: "Room" }],

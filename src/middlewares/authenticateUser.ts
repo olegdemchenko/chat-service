@@ -1,6 +1,7 @@
 import { ExtendedError } from "socket.io/dist/namespace";
 import axios, { AxiosError } from "axios";
 import dotenv from "dotenv";
+import { v4 as uuidv4 } from "uuid";
 import { CustomSocket, ExternalUserInfo } from "../types";
 import UserModel from "../db/models/User";
 
@@ -20,13 +21,14 @@ const authenticateUser = async (
         },
       },
     );
-    const { id, name, email } = userInfo;
+    const { id, name } = userInfo;
     let user = await UserModel.findOne({ externalId: id });
+    const userId = uuidv4();
     if (!user) {
       user = new UserModel({
+        id: userId,
         externalId: id,
         name,
-        email,
         rooms: [],
       });
       await user.save();

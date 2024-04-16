@@ -1,4 +1,3 @@
-import { Types } from "mongoose";
 import { RedisClientType } from "@redis/client";
 import RoomModel from "../db/models/Room";
 import UserModel from "../db/models/User";
@@ -22,25 +21,23 @@ export const handleCreateRoom = (
   io: IOServer,
 ) => {
   socket.on("createRoom", async (secondParticipantId: string) => {
-    const creatorId = socket.data.user._id;
     const creator = socket.data.user;
+    const secondParticipant = (await UserModel.findOne({
+      userId: secondParticipantId,
+    }))!;
     const newRoom = new RoomModel({
       messages: [],
-      participants: [
-        new Types.ObjectId(creatorId),
-        new Types.ObjectId(secondParticipantId),
-      ],
+      participants: [creator._id, secondParticipant._id],
     });
     await newRoom.save();
     creator.rooms.push(newRoom._id);
     await creator.save();
-    const secondParticipant = (await UserModel.findById(secondParticipantId))!;
     secondParticipant.rooms.push(newRoom._id);
     await secondParticipant.save();
     socket.join(`room:${newRoom._id.toString()}`);
     const secondParticipantSocket = [...io.of("/").sockets.values()].find(
       (currentSocket: CustomSocket) =>
-        currentSocket.data.user._id.toString() === secondParticipantId,
+        currentSocket.data.user.userId === secondParticipantId,
     );
     if (secondParticipantSocket) {
       secondParticipantSocket.join(`room:${newRoom._id.toString()}`);
@@ -50,8 +47,8 @@ export const handleCreateRoom = (
 
 export const handleLeaveRoom = (socket: CustomSocket) => {
   socket.on("leaveRoom", async (roomId: string) => {
-    const { _id } = socket.data.user;
-    await UserModel.updateOne({ _id }, { $pull: { rooms: roomId } });
+    const { userId } = socket.data.user;
+    await UserModel.updateOne({ userId }, { $pull: { rooms: roomId } });
     const room = (await RoomModel.findById(roomId))!;
     const roomParticipantsCount = room.participants.length;
     if (roomParticipantsCount === 1) {
@@ -59,7 +56,7 @@ export const handleLeaveRoom = (socket: CustomSocket) => {
     } else {
       await RoomModel.updateOne(
         { _id: roomId },
-        { $pull: { participants: _id } },
+        { $pull: { participants: socket.data.user._id } },
       );
     }
     socket.leave(`room:${roomId}`);

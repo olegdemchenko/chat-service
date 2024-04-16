@@ -8,7 +8,7 @@ export const handleSendMessage = (socket: CustomSocket) => {
     const date = new Date();
     const newMessage = new MessageModel({
       text,
-      author: new mongoose.mongo.ObjectId(socket.data.user._id.toString()),
+      author: new mongoose.mongo.ObjectId(socket.data.user.userId),
       date,
     });
     await newMessage.save();
@@ -20,7 +20,7 @@ export const handleSendMessage = (socket: CustomSocket) => {
       "message",
       JSON.stringify({
         id: newMessage._id.toString(),
-        author: socket.data.user._id.toString(),
+        author: socket.data.user.userId,
         text,
         date,
       }),
