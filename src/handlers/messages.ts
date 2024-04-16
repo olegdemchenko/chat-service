@@ -13,7 +13,7 @@ export const handleSendMessage = (socket: CustomSocket) => {
     });
     await newMessage.save();
     await RoomModel.updateOne(
-      { _id: roomId },
+      { roomId },
       { $push: { messages: newMessage._id } },
     );
     socket.to(`room:${roomId}`).emit(
@@ -47,10 +47,7 @@ export const handleUpdateMessage = (socket: CustomSocket) => {
 export const handleDeleteMessage = (socket: CustomSocket) => {
   socket.on("message:delete", async (roomId: string, messageId: string) => {
     await MessageModel.deleteOne({ _id: messageId });
-    await RoomModel.updateOne(
-      { _id: roomId },
-      { $pull: { messages: messageId } },
-    );
+    await RoomModel.updateOne({ roomId }, { $pull: { messages: messageId } });
     socket.to(`room:${roomId}`).emit("message:delete", messageId);
   });
 };

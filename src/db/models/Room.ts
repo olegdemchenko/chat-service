@@ -1,7 +1,7 @@
 import { Schema, model, Types, HydratedDocument } from "mongoose";
 
 interface Room {
-  _id: Types.ObjectId;
+  roomId: string;
   messages: Types.Array<Types.ObjectId>;
   participants: Types.Array<Types.ObjectId>;
 }
@@ -9,6 +9,11 @@ interface Room {
 export type RoomDocument = HydratedDocument<Room>;
 
 const roomSchema = new Schema<Room>({
+  roomId: {
+    type: String,
+    required: true,
+    unique: true,
+  },
   messages: [{ type: Schema.Types.ObjectId, ref: "Message" }],
   participants: [{ type: Schema.Types.ObjectId, ref: "User" }],
 });

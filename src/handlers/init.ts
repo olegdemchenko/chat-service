@@ -15,9 +15,9 @@ export const handleUpdateUserStatus = async (
 
 export const handleSendUserData = (socket: CustomSocket) => {
   socket.on("getUserData", async (callback) => {
-    const { userId } = socket.data.user;
+    const { _id } = socket.data.user;
     const userRooms = await RoomModel.find({
-      participants: { $elemMatch: { $eq: userId } },
+      participants: { $elemMatch: { $eq: _id } },
     })
       .populate("messages")
       .populate("participants");

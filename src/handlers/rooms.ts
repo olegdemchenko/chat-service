@@ -34,13 +34,13 @@ export const handleCreateRoom = (
     await creator.save();
     secondParticipant.rooms.push(newRoom._id);
     await secondParticipant.save();
-    socket.join(`room:${newRoom._id.toString()}`);
+    socket.join(`room:${newRoom.roomId}`);
     const secondParticipantSocket = [...io.of("/").sockets.values()].find(
       (currentSocket: CustomSocket) =>
         currentSocket.data.user.userId === secondParticipantId,
     );
     if (secondParticipantSocket) {
-      secondParticipantSocket.join(`room:${newRoom._id.toString()}`);
+      secondParticipantSocket.join(`room:${newRoom.roomId}`);
     }
   });
 };
@@ -48,14 +48,14 @@ export const handleCreateRoom = (
 export const handleLeaveRoom = (socket: CustomSocket) => {
   socket.on("leaveRoom", async (roomId: string) => {
     const { userId } = socket.data.user;
-    await UserModel.updateOne({ userId }, { $pull: { rooms: roomId } });
     const room = (await RoomModel.findById(roomId))!;
+    await UserModel.updateOne({ userId }, { $pull: { rooms: room._id } });
     const roomParticipantsCount = room.participants.length;
     if (roomParticipantsCount === 1) {
-      await RoomModel.deleteOne({ _id: roomId });
+      await RoomModel.deleteOne({ roomId });
     } else {
       await RoomModel.updateOne(
-        { _id: roomId },
+        { roomId },
         { $pull: { participants: socket.data.user._id } },
       );
     }
@@ -72,19 +72,19 @@ export const handleAddParticipant = (
     "addParticipant",
     async (roomId: string, newParticipantId: string) => {
       const participant = (await UserModel.findById({
-        _id: newParticipantId,
+        userId: newParticipantId,
       }))!;
-      const room = (await RoomModel.findById({ _id: roomId }))!;
+      const room = (await RoomModel.findById({ roomId }))!;
       participant.rooms.push(room._id);
       await participant.save();
       room.participants.push(participant._id);
       await room.save();
       const participantSocket = [...io.of("/").sockets.values()].find(
         (currentSocket: CustomSocket) =>
-          currentSocket.data.user._id.toString() === newParticipantId,
+          currentSocket.data.user.userId === newParticipantId,
       );
       if (participantSocket) {
-        participantSocket.join(`room:${room._id.toString()}`);
+        participantSocket.join(`room:${room.roomId}`);
       }
     },
   );
