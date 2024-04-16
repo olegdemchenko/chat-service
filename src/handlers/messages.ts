@@ -1,4 +1,5 @@
 import mongoose from "mongoose";
+import { v4 as uuidv4 } from "uuid";
 import { CustomSocket } from "../types";
 import MessageModel from "../db/models/Message";
 import RoomModel from "../db/models/Room";
@@ -7,6 +8,7 @@ export const handleSendMessage = (socket: CustomSocket) => {
   socket.on("message", async (roomId: string, text: string) => {
     const date = new Date();
     const newMessage = new MessageModel({
+      messageId: uuidv4(),
       text,
       author: new mongoose.mongo.ObjectId(socket.data.user.userId),
       date,
@@ -19,7 +21,7 @@ export const handleSendMessage = (socket: CustomSocket) => {
     socket.to(`room:${roomId}`).emit(
       "message",
       JSON.stringify({
-        id: newMessage._id.toString(),
+        id: newMessage.messageId,
         author: socket.data.user.userId,
         text,
         date,
@@ -33,7 +35,7 @@ export const handleUpdateMessage = (socket: CustomSocket) => {
     "message:update",
     async (roomId: string, messageId: string, newText: string) => {
       const date = new Date();
-      await MessageModel.updateOne({ _id: messageId }, { text: newText, date });
+      await MessageModel.updateOne({ messageId }, { text: newText, date });
       socket
         .to(`room:${roomId}`)
         .emit(
@@ -46,7 +48,7 @@ export const handleUpdateMessage = (socket: CustomSocket) => {
 
 export const handleDeleteMessage = (socket: CustomSocket) => {
   socket.on("message:delete", async (roomId: string, messageId: string) => {
-    await MessageModel.deleteOne({ _id: messageId });
+    await MessageModel.deleteOne({ messageId });
     await RoomModel.updateOne({ roomId }, { $pull: { messages: messageId } });
     socket.to(`room:${roomId}`).emit("message:delete", messageId);
   });
