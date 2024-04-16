@@ -1,4 +1,5 @@
 import { RedisClientType } from "@redis/client";
+import { v4 as uuidv4 } from "uuid";
 import RoomModel from "../db/models/Room";
 import UserModel from "../db/models/User";
 import { CustomSocket, IOServer } from "../types";
@@ -26,6 +27,7 @@ export const handleCreateRoom = (
       userId: secondParticipantId,
     }))!;
     const newRoom = new RoomModel({
+      roomId: uuidv4(),
       messages: [],
       participants: [creator._id, secondParticipant._id],
     });
