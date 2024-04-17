@@ -12,8 +12,10 @@ export const handleConnectToRooms = async (socket: CustomSocket) => {
   );
   const rooms = userWithRooms.rooms.map(({ roomId }) => createRoomName(roomId));
   socket.join(rooms);
+  socket.to(rooms).emit("userJoin", socket.data.user.userId);
 
   socket.on("disconnect", () => {
+    socket.to(rooms).emit("userLeave", socket.data.user.userId);
     rooms.forEach((room) => socket.leave(room));
   });
 };
