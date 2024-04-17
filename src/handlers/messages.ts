@@ -11,7 +11,7 @@ export const handleSendMessage = (socket: CustomSocket) => {
       text,
       author: new mongoose.mongo.ObjectId(socket.data.user.userId),
     });
-    const messageDocument = await newMessage.save();
+    await newMessage.save();
     await RoomModel.updateOne(
       { roomId },
       { $push: { messages: newMessage._id } },
@@ -22,7 +22,7 @@ export const handleSendMessage = (socket: CustomSocket) => {
         id: newMessage.messageId,
         author: socket.data.user.userId,
         text,
-        createdAt: messageDocument.createdAt,
+        createdAt: newMessage.createdAt,
       }),
     );
   });
