@@ -4,15 +4,17 @@ import RoomModel, { Room } from "../db/models/Room";
 import UserModel from "../db/models/User";
 import { CustomSocket, IOServer } from "../types";
 
+const createRoomName = (roomId: string) => `room:${roomId}`;
+
 export const handleConnectToRooms = async (socket: CustomSocket) => {
   const userWithRooms = await socket.data.user.populate<{ rooms: Room[] }>(
     "rooms",
   );
-  const roomIds = userWithRooms.rooms.map(({ roomId }) => roomId);
-  socket.join(roomIds);
+  const rooms = userWithRooms.rooms.map(({ roomId }) => createRoomName(roomId));
+  socket.join(rooms);
 
   socket.on("disconnect", () => {
-    roomIds.forEach((id) => socket.leave(id));
+    rooms.forEach((room) => socket.leave(room));
   });
 };
 
@@ -36,13 +38,13 @@ export const handleCreateRoom = (
     await creator.save();
     secondParticipant.rooms.push(newRoom._id);
     await secondParticipant.save();
-    socket.join(`room:${newRoom.roomId}`);
+    socket.join(createRoomName(newRoom.roomId));
     const secondParticipantSocket = [...io.of("/").sockets.values()].find(
       (currentSocket: CustomSocket) =>
         currentSocket.data.user.userId === secondParticipantId,
     );
     if (secondParticipantSocket) {
-      secondParticipantSocket.join(`room:${newRoom.roomId}`);
+      secondParticipantSocket.join(createRoomName(newRoom.roomId));
     }
   });
 };
@@ -61,7 +63,7 @@ export const handleLeaveRoom = (socket: CustomSocket) => {
         { $pull: { participants: socket.data.user._id } },
       );
     }
-    socket.leave(`room:${roomId}`);
+    socket.leave(createRoomName(roomId));
   });
 };
 
@@ -86,7 +88,7 @@ export const handleAddParticipant = (
           currentSocket.data.user.userId === newParticipantId,
       );
       if (participantSocket) {
-        participantSocket.join(`room:${room.roomId}`);
+        participantSocket.join(createRoomName(roomId));
       }
     },
   );
