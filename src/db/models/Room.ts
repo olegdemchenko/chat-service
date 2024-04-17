@@ -1,6 +1,6 @@
 import { Schema, model, Types, HydratedDocument } from "mongoose";
 
-interface Room {
+export interface Room {
   roomId: string;
   messages: Types.Array<Types.ObjectId>;
   participants: Types.Array<Types.ObjectId>;

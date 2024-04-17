@@ -1,14 +1,14 @@
 import { RedisClientType } from "@redis/client";
 import { v4 as uuidv4 } from "uuid";
-import RoomModel from "../db/models/Room";
+import RoomModel, { Room } from "../db/models/Room";
 import UserModel from "../db/models/User";
 import { CustomSocket, IOServer } from "../types";
 
-export const handleConnectToRooms = (socket: CustomSocket) => {
-  const {
-    user: { rooms },
-  } = socket.data;
-  const roomIds = rooms.map(({ _id }) => _id.toString());
+export const handleConnectToRooms = async (socket: CustomSocket) => {
+  const userWithRooms = await socket.data.user.populate<{ rooms: Room[] }>(
+    "rooms",
+  );
+  const roomIds = userWithRooms.rooms.map(({ roomId }) => roomId);
   socket.join(roomIds);
 
   socket.on("disconnect", () => {
