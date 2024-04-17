@@ -23,10 +23,9 @@ const authenticateUser = async (
     );
     const { id, name } = userInfo;
     let user = await UserModel.findOne({ externalId: id });
-    const userId = uuidv4();
     if (!user) {
       user = new UserModel({
-        id: userId,
+        userId: uuidv4(),
         externalId: id,
         name,
         rooms: [],
