@@ -6,14 +6,12 @@ import RoomModel from "../db/models/Room";
 
 export const handleSendMessage = (socket: CustomSocket) => {
   socket.on("message", async (roomId: string, text: string) => {
-    const date = new Date();
     const newMessage = new MessageModel({
       messageId: uuidv4(),
       text,
       author: new mongoose.mongo.ObjectId(socket.data.user.userId),
-      date,
     });
-    await newMessage.save();
+    const messageDocument = await newMessage.save();
     await RoomModel.updateOne(
       { roomId },
       { $push: { messages: newMessage._id } },
@@ -24,7 +22,7 @@ export const handleSendMessage = (socket: CustomSocket) => {
         id: newMessage.messageId,
         author: socket.data.user.userId,
         text,
-        date,
+        createdAt: messageDocument.createdAt,
       }),
     );
   });
@@ -34,14 +32,18 @@ export const handleUpdateMessage = (socket: CustomSocket) => {
   socket.on(
     "message:update",
     async (roomId: string, messageId: string, newText: string) => {
-      const date = new Date();
-      await MessageModel.updateOne({ messageId }, { text: newText, date });
-      socket
-        .to(`room:${roomId}`)
-        .emit(
-          "message:update",
-          JSON.stringify({ id: messageId, newText, date }),
-        );
+      const updatedMessageDocument = await MessageModel.findOneAndUpdate(
+        { messageId },
+        { text: newText },
+      );
+      socket.to(`room:${roomId}`).emit(
+        "message:update",
+        JSON.stringify({
+          id: messageId,
+          newText,
+          updatedAt: updatedMessageDocument?.updatedAt,
+        }),
+      );
     },
   );
 };
