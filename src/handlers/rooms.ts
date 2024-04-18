@@ -25,30 +25,37 @@ export const handleCreateRoom = (
   redisClient: RedisClientType,
   io: IOServer,
 ) => {
-  socket.on("createRoom", async (secondParticipantId: string) => {
-    const creator = socket.data.user;
-    const secondParticipant = (await UserModel.findOne({
-      userId: secondParticipantId,
-    }))!;
-    const newRoom = new RoomModel({
-      roomId: uuidv4(),
-      messages: [],
-      participants: [creator._id, secondParticipant._id],
-    });
-    await newRoom.save();
-    creator.rooms.push(newRoom._id);
-    await creator.save();
-    secondParticipant.rooms.push(newRoom._id);
-    await secondParticipant.save();
-    socket.join(createRoomName(newRoom.roomId));
-    const secondParticipantSocket = [...io.of("/").sockets.values()].find(
-      (currentSocket: CustomSocket) =>
-        currentSocket.data.user.userId === secondParticipantId,
-    );
-    if (secondParticipantSocket) {
-      secondParticipantSocket.join(createRoomName(newRoom.roomId));
-    }
-  });
+  socket.on(
+    "createRoom",
+    async (
+      secondParticipantId: string,
+      callback: (newRoomId: string) => void,
+    ) => {
+      const creator = socket.data.user;
+      const secondParticipant = (await UserModel.findOne({
+        userId: secondParticipantId,
+      }))!;
+      const newRoom = new RoomModel({
+        roomId: uuidv4(),
+        messages: [],
+        participants: [creator._id, secondParticipant._id],
+      });
+      await newRoom.save();
+      creator.rooms.push(newRoom._id);
+      await creator.save();
+      secondParticipant.rooms.push(newRoom._id);
+      await secondParticipant.save();
+      socket.join(createRoomName(newRoom.roomId));
+      const secondParticipantSocket = [...io.of("/").sockets.values()].find(
+        (currentSocket: CustomSocket) =>
+          currentSocket.data.user.userId === secondParticipantId,
+      );
+      if (secondParticipantSocket) {
+        secondParticipantSocket.join(createRoomName(newRoom.roomId));
+      }
+      callback(newRoom.roomId);
+    },
+  );
 };
 
 export const handleLeaveRoom = (socket: CustomSocket) => {
