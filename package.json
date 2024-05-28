@@ -4,7 +4,7 @@
   "description": "A Node.js chat service",
   "main": "index.js",
   "engines": {
-    "node": ">=18.0.0"
+    "node": ">=20.12.2"
   },
   "scripts": {
     "dev": "nodemon",
