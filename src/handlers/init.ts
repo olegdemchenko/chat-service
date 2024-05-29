@@ -6,10 +6,9 @@ export const handleUpdateUserStatus = async (
   socket: CustomSocket,
   redisClient: RedisClientType,
 ) => {
-  await redisClient.SADD("active_users", socket.data.user.userId);
-
+  await redisClient.set(socket.data.user.userId, socket.id);
   socket.on("disconnect", async () => {
-    await redisClient.SREM("active_users", socket.data.user.userId);
+    await redisClient.del(socket.data.user.userId);
   });
 };
 

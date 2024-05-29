@@ -41,17 +41,20 @@ export const handleCreateRoom = (
         participants: [creator._id, secondParticipant._id],
       });
       await newRoom.save();
-      creator.rooms.push(newRoom._id);
-      await creator.save();
-      secondParticipant.rooms.push(newRoom._id);
-      await secondParticipant.save();
-      socket.join(createRoomName(newRoom.roomId));
-      const secondParticipantSocket = [...io.of("/").sockets.values()].find(
-        (currentSocket: CustomSocket) =>
-          currentSocket.data.user.userId === secondParticipantId,
+      await UserModel.updateMany(
+        {
+          _id: { $in: [creator._id, secondParticipant._id] },
+        },
+        { $push: { rooms: newRoom._id } },
       );
-      if (secondParticipantSocket) {
-        secondParticipantSocket.join(createRoomName(newRoom.roomId));
+      socket.join(createRoomName(newRoom.roomId));
+      const secondParticipantSocketId =
+        await redisClient.get(secondParticipantId);
+      if (secondParticipantSocketId) {
+        const secondParticipantSocket = io
+          .of("/")
+          .sockets.get(secondParticipantSocketId);
+        secondParticipantSocket!.join(createRoomName(newRoom.roomId));
       }
       callback(newRoom.roomId);
     },
@@ -88,16 +91,20 @@ export const handleAddParticipant = (
         userId: newParticipantId,
       }))!;
       const room = (await RoomModel.findById({ roomId }))!;
-      participant.rooms.push(room._id);
-      await participant.save();
-      room.participants.push(participant._id);
-      await room.save();
-      const participantSocket = [...io.of("/").sockets.values()].find(
-        (currentSocket: CustomSocket) =>
-          currentSocket.data.user.userId === newParticipantId,
+      await UserModel.updateOne(
+        { userId: newParticipantId },
+        { $push: { rooms: room._id } },
       );
-      if (participantSocket) {
-        participantSocket.join(createRoomName(roomId));
+      await RoomModel.updateOne(
+        { roomId },
+        { $push: { participants: participant._id } },
+      );
+      const newParticipantSocketId = await redisClient.get(newParticipantId);
+      if (newParticipantSocketId) {
+        const secondParticipantSocket = io
+          .of("/")
+          .sockets.get(newParticipantSocketId);
+        secondParticipantSocket!.join(createRoomName(room.roomId));
       }
     },
   );

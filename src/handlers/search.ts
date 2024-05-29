@@ -25,12 +25,13 @@ export const handleFindUsers = (
         },
         ["name", "email"],
       );
-      const activeUsers = await redisClient.SMEMBERS("active_users");
-      const usersWithStatuses = match.map(({ userId, name }) => ({
-        userId,
-        name,
-        isOnline: activeUsers.includes(userId),
-      }));
+      const usersWithStatuses = await Promise.all(
+        match.map(async ({ userId, name }) => ({
+          userId,
+          name,
+          isOnline: Boolean(await redisClient.get(userId)),
+        })),
+      );
       callback(usersWithStatuses);
     },
   );
