@@ -25,7 +25,7 @@ export const handleFindUsers = (
             name: { $regex: new RegExp(nameFragment) },
             externalId: { $ne: socket.data.user.externalId },
           },
-          ["name", "email"],
+          ["name", "userId"],
         );
         const usersWithStatuses = await Promise.all(
           match.map(async ({ userId, name }) => ({
