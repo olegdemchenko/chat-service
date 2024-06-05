@@ -2,6 +2,8 @@ import { RedisClientType } from "@redis/client";
 import { CustomSocket } from "../types";
 import RoomModel from "../db/models/Room";
 import { logErrors } from "../utils";
+import { Message } from "../db/models/Message";
+import { User } from "../db/models/User";
 
 export const handleUpdateUserStatus = (
   socket: CustomSocket,
@@ -18,16 +20,34 @@ export const handleUpdateUserStatus = (
   }, "redis add user error");
 };
 
-export const handleSendUserData = (socket: CustomSocket) => {
+export const handleSendUserData = (
+  socket: CustomSocket,
+  redisClient: RedisClientType,
+) => {
   socket.on("getUserData", (callback) => {
     logErrors(async () => {
       const { _id } = socket.data.user;
       const userRooms = await RoomModel.find({
         participants: { $elemMatch: { $eq: _id } },
       })
-        .populate("messages")
-        .populate("participants");
-      callback(userRooms);
+        .populate<{ messages: Message[] }>("messages")
+        .populate<{ participants: User[] }>("participants");
+      const roomsWithUsersStatuses = await Promise.all(
+        userRooms.map(async ({ roomId, messages, participants }) => {
+          const participantsWithStatuses = await Promise.all(
+            participants.map(async ({ userId, name }) => {
+              return {
+                userId,
+                name,
+                isOnline: Boolean(await redisClient.get(userId)),
+              };
+            }),
+          );
+
+          return { roomId, messages, participants: participantsWithStatuses };
+        }),
+      );
+      callback(roomsWithUsersStatuses);
     }, "getUserData error");
   });
 };

@@ -1,6 +1,6 @@
 import { Schema, model, Types, HydratedDocument } from "mongoose";
 
-interface User {
+export interface User {
   userId: string;
   externalId: number;
   name: string;
