@@ -35,11 +35,10 @@ const authenticateUser = async (
     socket.data.user = user;
     next();
   } catch (e) {
-    const error = e as Error;
-    if (error instanceof AxiosError) {
+    if (e instanceof AxiosError && e.response?.status === 400) {
       return next(new Error("User token is invalid"));
     }
-    next(error);
+    next(e as Error);
   }
 };
 
