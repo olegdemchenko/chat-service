@@ -10,23 +10,28 @@ export const handleFindUsers = (
   socket.on(
     "findUsers",
     (
-      nameFragment: string,
+      query: string,
+      page: number,
       callback: (
         foundUsers: readonly {
           userId: string;
           name: string;
           isOnline: boolean;
         }[],
+        count: number,
       ) => void,
     ) => {
       logErrors(async () => {
-        const match = await UserModel.find(
-          {
-            name: { $regex: new RegExp(nameFragment) },
-            externalId: { $ne: socket.data.user.externalId },
-          },
-          ["name", "userId"],
-        );
+        const resultsPerPage = 3;
+        const searchCriteria = {
+          name: { $regex: new RegExp(query) },
+          externalId: { $ne: socket.data.user.externalId },
+        };
+        const match = await UserModel.find(searchCriteria, null, {
+          skip: page * resultsPerPage,
+          limit: resultsPerPage,
+        });
+        const matchCount = await UserModel.countDocuments(searchCriteria);
         const usersWithStatuses = await Promise.all(
           match.map(async ({ userId, name }) => ({
             userId,
@@ -34,7 +39,7 @@ export const handleFindUsers = (
             isOnline: Boolean(await redisClient.get(userId)),
           })),
         );
-        callback(usersWithStatuses);
+        callback(usersWithStatuses, matchCount);
       }, "find users error");
     },
   );
