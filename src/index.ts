@@ -23,5 +23,8 @@ connectDB()
     io.on("connection", (socket: CustomSocket) => {
       addHandlers(io, socket, client as RedisClientType);
     });
+    io.engine.on("connection_error", (err) => {
+      console.log("socket_connection_error", err);
+    });
   })
   .catch((e) => console.error(`Server initialization error: ${e}`));
