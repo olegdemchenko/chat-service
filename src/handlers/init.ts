@@ -11,8 +11,7 @@ export const handleUpdateUserStatus = (
 ) => {
   logErrors(async () => {
     await redisClient.set(socket.data.user.userId, socket.id);
-    socket.on("disconnect", (reason: string) => {
-      console.log("disconnect reason", reason);
+    socket.on("disconnect", () => {
       logErrors(async () => {
         await redisClient.del(socket.data.user.userId);
       }, "redis delete user error");
@@ -24,14 +23,17 @@ export const handleSendUserData = (
   socket: CustomSocket,
   redisClient: RedisClientType,
 ) => {
-  socket.on("getUserData", (callback) => {
+  socket.on("getUserRooms", (callback) => {
     logErrors(async () => {
       const { _id } = socket.data.user;
       const userRooms = await RoomModel.find({
         participants: { $elemMatch: { $eq: _id } },
       })
         .populate<{ messages: Message[] }>("messages")
-        .populate<{ participants: User[] }>("participants");
+        .populate<{ participants: User[] }>({
+          path: "participants",
+          match: { _id: { $ne: _id } },
+        });
       const roomsWithUsersStatuses = await Promise.all(
         userRooms.map(async ({ roomId, messages, participants }) => {
           const participantsWithStatuses = await Promise.all(
