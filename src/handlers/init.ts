@@ -29,10 +29,14 @@ export const handleSendUserData = (
       const userRooms = await RoomModel.find({
         participants: { $elemMatch: { $eq: _id } },
       })
-        .populate<{ messages: Message[] }>("messages")
+        .populate<{ messages: Message[] }>({
+          path: "messages",
+          select: "messageId text author createdAt updatedAt -_id",
+        })
         .populate<{ participants: User[] }>({
           path: "participants",
           match: { _id: { $ne: _id } },
+          select: "userId name -_id",
         });
       const roomsWithUsersStatuses = await Promise.all(
         userRooms.map(async ({ roomId, messages, participants }) => {
