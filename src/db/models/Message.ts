@@ -1,9 +1,9 @@
-import { Schema, model, Types } from "mongoose";
+import { Schema, model } from "mongoose";
 
 export interface Message {
   messageId: string;
   text: string;
-  author: Types.ObjectId;
+  author: string;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -16,7 +16,7 @@ export const messageSchema = new Schema<Message>(
       unique: true,
     },
     text: String,
-    author: { type: Schema.Types.ObjectId, ref: "User" },
+    author: String,
   },
   { timestamps: true },
 );
