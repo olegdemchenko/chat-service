@@ -4,21 +4,18 @@ export interface Message {
   messageId: string;
   text: string;
   author: string;
-  createdAt: Date;
-  updatedAt: Date;
+  lastModified: Date;
 }
 
-export const messageSchema = new Schema<Message>(
-  {
-    messageId: {
-      type: String,
-      required: true,
-      unique: true,
-    },
-    text: String,
-    author: String,
+export const messageSchema = new Schema<Message>({
+  messageId: {
+    type: String,
+    required: true,
+    unique: true,
   },
-  { timestamps: true },
-);
+  text: String,
+  author: String,
+  lastModified: { type: Date, default: Date.now },
+});
 
 export default model<Message>("Message", messageSchema);

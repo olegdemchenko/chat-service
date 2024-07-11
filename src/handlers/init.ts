@@ -31,7 +31,7 @@ export const handleSendUserData = (
       })
         .populate<{ messages: Message[] }>({
           path: "messages",
-          select: "messageId text author createdAt updatedAt -_id",
+          select: "messageId text author lastModified -_id",
         })
         .populate<{ participants: User[] }>({
           path: "participants",
