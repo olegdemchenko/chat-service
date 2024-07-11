@@ -2,6 +2,7 @@ import { RedisClientType } from "@redis/client";
 import { v4 as uuidv4 } from "uuid";
 import RoomModel, { Room } from "../db/models/Room";
 import UserModel from "../db/models/User";
+import MessageModel from "../db/models/Message";
 import { CustomSocket, IOServer } from "../types";
 import { logErrors } from "../utils";
 
@@ -34,7 +35,10 @@ export const handleCreateRoom = (
 ) => {
   socket.on(
     "createRoom",
-    (secondParticipantId: string, callback: (newRoomId: string) => void) => {
+    (
+      secondParticipantId: string,
+      callback: (newRoomId: Room["roomId"]) => void,
+    ) => {
       logErrors(async () => {
         const creator = socket.data.user;
         const secondParticipant = (await UserModel.findOne({
@@ -52,14 +56,21 @@ export const handleCreateRoom = (
           },
           { $push: { rooms: newRoom._id } },
         );
-        socket.join(createRoomName(newRoom.roomId));
+        await socket.join(createRoomName(newRoom.roomId));
         const secondParticipantSocketId =
           await redisClient.get(secondParticipantId);
         if (secondParticipantSocketId) {
           const secondParticipantSocket = io
             .of("/")
             .sockets.get(secondParticipantSocketId);
-          secondParticipantSocket!.join(createRoomName(newRoom.roomId));
+          await secondParticipantSocket!.join(createRoomName(newRoom.roomId));
+          secondParticipantSocket!.emit("newRoom", {
+            roomId: newRoom.roomId,
+            participants: [
+              { userId: creator.userId, name: creator.name, isOnline: true },
+            ],
+            messages: [],
+          });
         }
         callback(newRoom.roomId);
       }, "create room error");
@@ -68,23 +79,31 @@ export const handleCreateRoom = (
 };
 
 export const handleLeaveRoom = (socket: CustomSocket) => {
-  socket.on("leaveRoom", (roomId: string) => {
-    logErrors(async () => {
-      const { userId } = socket.data.user;
-      const room = (await RoomModel.findById(roomId))!;
-      await UserModel.updateOne({ userId }, { $pull: { rooms: room._id } });
-      const roomParticipantsCount = room.participants.length;
-      if (roomParticipantsCount === 1) {
-        await RoomModel.deleteOne({ roomId });
-      } else {
-        await RoomModel.updateOne(
-          { roomId },
-          { $pull: { participants: socket.data.user._id } },
-        );
-      }
-      socket.leave(createRoomName(roomId));
-    }, "leave room error");
-  });
+  socket.on(
+    "leaveRoom",
+    (roomId: string, callback: (status: boolean) => void) => {
+      logErrors(async () => {
+        const { userId } = socket.data.user;
+        const room = await RoomModel.findOne({ roomId });
+        if (!room) {
+          return callback(false);
+        }
+        await UserModel.updateOne({ userId }, { $pull: { rooms: room._id } });
+        const roomParticipantsCount = room.participants.length;
+        if (roomParticipantsCount === 1) {
+          await MessageModel.deleteMany({ _id: { $in: room.messages } });
+          await RoomModel.deleteOne({ roomId });
+        } else {
+          await RoomModel.updateOne(
+            { roomId },
+            { $pull: { participants: socket.data.user._id } },
+          );
+        }
+        socket.leave(createRoomName(roomId));
+        callback(true);
+      }, "leave room error");
+    },
+  );
 };
 
 export const handleAddParticipant = (
