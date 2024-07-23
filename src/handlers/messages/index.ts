@@ -1,42 +1,39 @@
-import { v4 as uuidv4 } from "uuid";
-import { CustomSocket } from "../types";
-import MessageModel, { Message } from "../db/models/Message";
-import RoomModel from "../db/models/Room";
-import { logErrors } from "../utils";
+import { RedisClientType } from "@redis/client";
+import { CustomSocket, IOServer } from "../../types";
+import MessageModel, { Message } from "../../db/models/Message";
+import RoomModel from "../../db/models/Room";
+import { logErrors } from "../../utils";
+import sendMessage from "./sendMessage";
 
-export const handleSendMessage = (socket: CustomSocket) => {
+export interface ResponseMessage {
+  messageId: string;
+  text: string;
+  author: string;
+  lastModified: Date;
+}
+
+export const handleSendMessage = (
+  socket: CustomSocket,
+  redisClient: RedisClientType,
+  io: IOServer,
+) => {
   socket.on(
     "message",
     (
       roomId: string,
       text: string,
-      callback: (newMessage: {
-        messageId: string;
-        text: string;
-        author: string;
-        lastModified: Date;
-      }) => void,
+      callback: (newMessage: ResponseMessage) => void,
     ) => {
       logErrors(async () => {
-        const newMessage = new MessageModel({
-          messageId: uuidv4(),
+        await sendMessage(
+          socket,
+          io,
+          "excludeAuthor",
+          roomId,
           text,
-          author: socket.data.user.userId,
-          lastModified: new Date(),
-        });
-        await newMessage.save();
-        await RoomModel.updateOne(
-          { roomId },
-          { $push: { messages: newMessage._id } },
+          socket.data.user.userId,
+          callback,
         );
-        const message = {
-          messageId: newMessage.messageId,
-          author: socket.data.user.userId,
-          text,
-          lastModified: newMessage.lastModified,
-        };
-        socket.to(`room:${roomId}`).emit("message", roomId, message);
-        callback(message);
       }, "message error");
     },
   );

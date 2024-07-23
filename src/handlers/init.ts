@@ -27,7 +27,7 @@ export const handleSendUserData = (
     logErrors(async () => {
       const { _id } = socket.data.user;
       const userRooms = await RoomModel.find({
-        participants: { $elemMatch: { $eq: _id } },
+        activeParticipants: { $elemMatch: { $eq: _id } },
       })
         .populate<{ messages: Message[] }>({
           path: "messages",
