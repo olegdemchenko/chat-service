@@ -9,3 +9,5 @@ export const logErrors = (
     console.error(e);
   }
 };
+
+export const getRoomName = (roomId: string) => `room:${roomId}`;

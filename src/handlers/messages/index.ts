@@ -1,8 +1,13 @@
 import { RedisClientType } from "@redis/client";
+import _ from "lodash";
 import { CustomSocket, IOServer } from "../../types";
-import MessageModel, { Message } from "../../db/models/Message";
-import RoomModel from "../../db/models/Room";
-import { logErrors } from "../../utils";
+import {
+  deleteMessage,
+  getMessage,
+  updateMessage,
+} from "../../db/functions/messages";
+import { removeMessage } from "../../db/functions/rooms";
+import { getRoomName, logErrors } from "../../utils";
 import sendMessage from "./sendMessage";
 
 export interface ResponseMessage {
@@ -46,20 +51,17 @@ export const handleUpdateMessage = (socket: CustomSocket) => {
       roomId: string,
       messageId: string,
       newText: string,
-      callback: (message: Omit<Message, "author">) => void,
+      callback: (message: Omit<ResponseMessage, "author">) => void,
     ) => {
       logErrors(async () => {
-        const updatedMessageDocument = await MessageModel.findOneAndUpdate(
-          { messageId },
-          { text: newText, $currentDate: { lastModified: true } },
-        );
-        const updatedMessage = {
-          messageId,
-          text: newText,
-          lastModified: updatedMessageDocument!.lastModified,
-        };
+        const updatedMessageDocument = await updateMessage(messageId, newText);
+        const updatedMessage = _.pick(updatedMessageDocument, [
+          "messageId",
+          "text",
+          "lastModified",
+        ]) as Omit<ResponseMessage, "author">;
         socket
-          .to(`room:${roomId}`)
+          .to(getRoomName(roomId))
           .emit("message:update", roomId, updatedMessage);
         callback(updatedMessage);
       }, "message:update error");
@@ -72,13 +74,12 @@ export const handleDeleteMessage = (socket: CustomSocket) => {
     "message:delete",
     (roomId: string, messageId: string, callback: () => void) => {
       logErrors(async () => {
-        const message = await MessageModel.findOne({ messageId });
-        await RoomModel.updateOne(
-          { roomId },
-          { $pull: { messages: message!._id } },
-        );
-        socket.to(`room:${roomId}`).emit("message:delete", roomId, messageId);
-        await MessageModel.deleteOne({ messageId });
+        const message = await getMessage(messageId);
+        await removeMessage(roomId, message._id);
+        socket
+          .to(getRoomName(roomId))
+          .emit("message:delete", roomId, messageId);
+        await deleteMessage(messageId);
         callback();
       }, "message:delete error");
     },

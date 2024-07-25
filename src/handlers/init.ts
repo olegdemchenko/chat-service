@@ -1,19 +1,18 @@
 import { RedisClientType } from "@redis/client";
 import { CustomSocket } from "../types";
-import RoomModel from "../db/models/Room";
 import { logErrors } from "../utils";
-import { Message } from "../db/models/Message";
-import { User } from "../db/models/User";
+import { getUserRooms } from "../db/functions/rooms";
+import { saveSocketId, deleteSocketId, isSocketIdSaved } from "../redisClient";
 
 export const handleUpdateUserStatus = (
   socket: CustomSocket,
   redisClient: RedisClientType,
 ) => {
   logErrors(async () => {
-    await redisClient.set(socket.data.user.userId, socket.id);
+    await saveSocketId(redisClient, socket.data.user.userId, socket.id);
     socket.on("disconnect", () => {
       logErrors(async () => {
-        await redisClient.del(socket.data.user.userId);
+        await deleteSocketId(redisClient, socket.data.user.userId);
       }, "redis delete user error");
     });
   }, "redis add user error");
@@ -26,18 +25,7 @@ export const handleSendUserData = (
   socket.on("getUserRooms", (callback) => {
     logErrors(async () => {
       const { _id } = socket.data.user;
-      const userRooms = await RoomModel.find({
-        activeParticipants: { $elemMatch: { $eq: _id } },
-      })
-        .populate<{ messages: Message[] }>({
-          path: "messages",
-          select: "messageId text author lastModified -_id",
-        })
-        .populate<{ participants: User[] }>({
-          path: "participants",
-          match: { _id: { $ne: _id } },
-          select: "userId name -_id",
-        });
+      const userRooms = await getUserRooms(_id);
       const roomsWithUsersStatuses = await Promise.all(
         userRooms.map(async ({ roomId, messages, participants }) => {
           const participantsWithStatuses = await Promise.all(
@@ -45,7 +33,7 @@ export const handleSendUserData = (
               return {
                 userId,
                 name,
-                isOnline: Boolean(await redisClient.get(userId)),
+                isOnline: await isSocketIdSaved(redisClient, userId),
               };
             }),
           );

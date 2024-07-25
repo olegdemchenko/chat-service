@@ -1,8 +1,8 @@
-import { v4 as uuidv4 } from "uuid";
+import _ from "lodash";
 import { CustomSocket, IOServer } from "../../types";
-import MessageModel from "../../db/models/Message";
 import RoomModel from "../../db/models/Room";
 import { type ResponseMessage } from ".";
+import { createMessage } from "../../db/functions/messages";
 
 export default async (
   socket: CustomSocket,
@@ -13,23 +13,17 @@ export default async (
   author: string,
   callback?: (newMessage: ResponseMessage) => void,
 ) => {
-  const newMessage = new MessageModel({
-    messageId: uuidv4(),
-    text,
-    author,
-    lastModified: new Date(),
-  });
-  await newMessage.save();
+  const newMessageDocument = await createMessage(text, author);
   await RoomModel.updateOne(
     { roomId },
-    { $push: { messages: newMessage._id } },
+    { $push: { messages: newMessageDocument._id } },
   );
-  const message = {
-    messageId: newMessage.messageId,
-    author,
-    text,
-    lastModified: newMessage.lastModified,
-  };
+  const message = _.pick(newMessageDocument, [
+    "messageId",
+    "author",
+    "text",
+    "lastModified",
+  ]);
   if (to === "excludeAuthor") {
     socket.to(`room:${roomId}`).emit("message", roomId, message);
     callback?.(message);

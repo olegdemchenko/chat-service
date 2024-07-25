@@ -1,19 +1,26 @@
 import { RedisClientType } from "@redis/client";
-import { v4 as uuidv4 } from "uuid";
-import { Schema } from "mongoose";
-import RoomModel, { Room } from "../db/models/Room";
-import UserModel, { User, UserDocument } from "../db/models/User";
-import MessageModel, { Message } from "../db/models/Message";
+import { User } from "../db/models/User";
+import { Message } from "../db/models/Message";
 import { CustomSocket, IOServer } from "../types";
-import { logErrors } from "../utils";
+import { logErrors, getRoomName } from "../utils";
 import sendMessage from "./messages/sendMessage";
-
-interface RoomWithPopulatedFields {
-  _id: Schema.Types.ObjectId;
-  roomId: string;
-  messages: Message[];
-  participants: User[];
-}
+import {
+  addActiveParticipant,
+  createNewRoom,
+  deleteRoom,
+  getRoom,
+  getRoomByParticipants,
+  getRoomWithMessages,
+  removeActiveParticipant,
+} from "../db/functions/rooms";
+import {
+  addRoom,
+  getUserWithRooms,
+  getUser,
+  removeRoom,
+} from "../db/functions/users";
+import { isSocketIdSaved } from "../redisClient";
+import { deleteRoomMessages } from "../db/functions/messages";
 
 interface RoomWithParticipantStatus {
   roomId: string;
@@ -23,111 +30,11 @@ interface RoomWithParticipantStatus {
   })[];
 }
 
-const createRoomName = (roomId: string) => `room:${roomId}`;
-
-const connectToExistingRoom = async (
-  firstParticipant: UserDocument,
-  secondParticipant: UserDocument,
-  room: RoomWithPopulatedFields,
-  socket: CustomSocket,
-  redisClient: RedisClientType,
-  successCallback: (newRoom: RoomWithParticipantStatus) => void,
-) => {
-  await RoomModel.updateOne(
-    { roomId: room.roomId },
-    {
-      $push: {
-        activeParticipants: firstParticipant._id,
-      },
-    },
-  );
-  await UserModel.updateOne(
-    {
-      _id: firstParticipant._id,
-    },
-    { $push: { rooms: room._id } },
-  );
-  await socket.join(createRoomName(room.roomId));
-  const secondParticipantSocketId = await redisClient.get(
-    secondParticipant.userId,
-  );
-  successCallback({
-    roomId: room.roomId,
-    messages: room.messages as any as Message[],
-    participants: [
-      {
-        userId: secondParticipant.userId,
-        name: secondParticipant.name,
-        isOnline: Boolean(secondParticipantSocketId),
-      },
-    ],
-  });
-};
-
-const connectToNewRoom = async (
-  firstParticipant: UserDocument,
-  secondParticipant: UserDocument,
-  socket: CustomSocket,
-  redisClient: RedisClientType,
-  io: IOServer,
-  successCallback: (newRoom: RoomWithParticipantStatus) => void,
-) => {
-  const newRoom = new RoomModel({
-    roomId: uuidv4(),
-    messages: [],
-    participants: [firstParticipant._id, secondParticipant._id],
-    activeParticipants: [firstParticipant._id, secondParticipant._id],
-  });
-  await newRoom.save();
-  await UserModel.updateMany(
-    {
-      _id: { $in: [firstParticipant._id, secondParticipant._id] },
-    },
-    { $push: { rooms: newRoom._id } },
-  );
-  await socket.join(createRoomName(newRoom.roomId));
-  const secondParticipantSocketId = await redisClient.get(
-    secondParticipant.userId,
-  );
-  if (secondParticipantSocketId) {
-    const secondParticipantSocket = io
-      .of("/")
-      .sockets.get(secondParticipantSocketId);
-    await secondParticipantSocket!.join(createRoomName(newRoom.roomId));
-    secondParticipantSocket!.emit("newRoom", {
-      roomId: newRoom.roomId,
-      participants: [
-        {
-          userId: firstParticipant.userId,
-          name: firstParticipant.name,
-          isOnline: true,
-        },
-      ],
-      messages: [],
-    });
-  }
-  successCallback({
-    roomId: newRoom.roomId,
-    messages: [],
-    participants: [
-      {
-        userId: secondParticipant.userId,
-        name: secondParticipant.name,
-        isOnline: Boolean(secondParticipantSocketId),
-      },
-    ],
-  });
-};
-
 export const handleConnectToRooms = (socket: CustomSocket) => {
   logErrors(async () => {
-    const userWithRooms = await socket.data.user.populate<{ rooms: Room[] }>(
-      "rooms",
-    );
-    const rooms = userWithRooms.rooms.map(({ roomId }) =>
-      createRoomName(roomId),
-    );
-    socket.join(rooms);
+    const userWithRooms = await getUserWithRooms(socket.data.user.userId);
+    const rooms = userWithRooms.rooms.map(({ roomId }) => getRoomName(roomId));
+    await socket.join(rooms);
     socket.to(rooms).emit("userJoin", socket.data.user.userId);
 
     socket.on("disconnect", () => {
@@ -150,33 +57,60 @@ export const handleFindExistingRoom = (
       callback: (room: RoomWithParticipantStatus | null) => void,
     ) => {
       logErrors(async () => {
-        const secondParticipant = (await UserModel.findOne({
-          userId: secondParticipantId,
-        }))!;
-        const existingRoom = await RoomModel.findOne({
-          participants: { $all: [socket.data.user._id, secondParticipant._id] },
-        }).populate<{ messages: Message[] }>("messages");
-        const isSecondParticipantOnline = Boolean(
-          await redisClient.get(secondParticipant.userId),
+        const secondParticipant = await getUser(secondParticipantId);
+        const existingRoom = await getRoomByParticipants(
+          socket.data.user._id,
+          secondParticipant._id,
         );
-        callback(
-          existingRoom
-            ? {
-                roomId: existingRoom.roomId,
-                messages: existingRoom.messages,
-                participants: [
-                  {
-                    userId: secondParticipant.userId,
-                    name: secondParticipant.name,
-                    isOnline: isSecondParticipantOnline,
-                  },
-                ],
-              }
-            : null,
+        if (!existingRoom) {
+          return callback(null);
+        }
+        const existingRoomWithMessages = await getRoomWithMessages(
+          existingRoom.roomId,
         );
+        const isSecondParticipantOnline = await isSocketIdSaved(
+          redisClient,
+          secondParticipant.userId,
+        );
+        callback({
+          roomId: existingRoomWithMessages.roomId,
+          messages: existingRoomWithMessages.messages,
+          participants: [
+            {
+              userId: secondParticipant.userId,
+              name: secondParticipant.name,
+              isOnline: isSecondParticipantOnline,
+            },
+          ],
+        });
       }, "find existing room error");
     },
   );
+};
+
+export const handleConnectToRoom = (
+  socket: CustomSocket,
+  redisClient: RedisClientType,
+  io: IOServer,
+) => {
+  socket.on("connectToRoom", (roomId: string, callback: () => void) => {
+    logErrors(async () => {
+      const { user } = socket.data;
+      await addActiveParticipant(roomId, user._id);
+      const room = await getRoom(roomId);
+      await addRoom(user._id, room._id);
+      await socket.join(getRoomName(roomId));
+      callback();
+      await sendMessage(
+        socket,
+        io,
+        "all",
+        roomId,
+        `User "${socket.data.user.name}" has joined the room`,
+        "system",
+      );
+    }, "connect to room error");
+  });
 };
 
 export const handleCreateRoom = (
@@ -192,44 +126,42 @@ export const handleCreateRoom = (
     ) => {
       logErrors(async () => {
         const creator = socket.data.user;
-        const secondParticipant = (await UserModel.findOne({
-          userId: secondParticipantId,
-        }))!;
-        const previouslyCreatedRoom = await RoomModel.findOne({
-          participants: { $all: [creator._id, secondParticipant._id] },
-        })
-          .populate<{ activeParticipants: User[] }>({
-            path: "activeParticipants",
-            select: "userId name -_id",
-          })
-          .populate<{ messages: Message[] }>("messages");
-        if (previouslyCreatedRoom) {
-          await connectToExistingRoom(
-            creator,
-            secondParticipant,
-            previouslyCreatedRoom as unknown as RoomWithPopulatedFields,
-            socket,
-            redisClient,
-            callback,
-          );
-          await sendMessage(
-            socket,
-            io,
-            "all",
-            previouslyCreatedRoom.roomId,
-            `User "${socket.data.user.name}" joined the room`,
-            "system",
-          );
-        } else {
-          await connectToNewRoom(
-            creator,
-            secondParticipant,
-            socket,
-            redisClient,
-            io,
-            callback,
-          );
+        const secondParticipant = await getUser(secondParticipantId);
+        const newRoom = await createNewRoom(creator._id, secondParticipant._id);
+        await addRoom(creator._id, newRoom._id);
+        await addRoom(secondParticipant._id, newRoom._id);
+        await socket.join(getRoomName(newRoom.roomId));
+        const secondParticipantSocketId = await redisClient.get(
+          secondParticipant.userId,
+        );
+        if (secondParticipantSocketId) {
+          const secondParticipantSocket = io
+            .of("/")
+            .sockets.get(secondParticipantSocketId);
+          await secondParticipantSocket!.join(getRoomName(newRoom.roomId));
+          secondParticipantSocket!.emit("newRoom", {
+            roomId: newRoom.roomId,
+            participants: [
+              {
+                userId: creator.userId,
+                name: creator.name,
+                isOnline: true,
+              },
+            ],
+            messages: [],
+          });
         }
+        callback({
+          roomId: newRoom.roomId,
+          messages: [],
+          participants: [
+            {
+              userId: secondParticipant.userId,
+              name: secondParticipant.name,
+              isOnline: Boolean(secondParticipantSocketId),
+            },
+          ],
+        });
       }, "create room error");
     },
   );
@@ -245,20 +177,14 @@ export const handleLeaveRoom = (
     (roomId: string, callback: (status: boolean) => void) => {
       logErrors(async () => {
         const { userId } = socket.data.user;
-        const room = await RoomModel.findOne({ roomId });
-        if (!room) {
-          return callback(false);
-        }
-        await UserModel.updateOne({ userId }, { $pull: { rooms: room._id } });
+        const room = await getRoom(roomId);
+        await removeRoom(userId, room._id);
         const roomParticipantsCount = room.activeParticipants.length;
         if (roomParticipantsCount === 1) {
-          await MessageModel.deleteMany({ _id: { $in: room.messages } });
-          await RoomModel.deleteOne({ roomId });
+          await deleteRoomMessages(room.messages);
+          await deleteRoom(roomId);
         } else {
-          await RoomModel.updateOne(
-            { roomId },
-            { $pull: { activeParticipants: socket.data.user._id } },
-          );
+          await removeActiveParticipant(roomId, socket.data.user._id);
           await sendMessage(
             socket,
             io,
@@ -268,44 +194,9 @@ export const handleLeaveRoom = (
             "system",
           );
         }
-        socket.leave(createRoomName(roomId));
+        socket.leave(getRoomName(roomId));
         callback(true);
       }, "leave room error");
     },
   );
-};
-
-export const handleAddParticipant = (
-  socket: CustomSocket,
-  redisClient: RedisClientType,
-  io: IOServer,
-) => {
-  socket.on("addParticipant", (roomId: string, newParticipantId: string) => {
-    logErrors(async () => {
-      const participant = (await UserModel.findById({
-        userId: newParticipantId,
-      }))!;
-      const room = (await RoomModel.findById({ roomId }))!;
-      await UserModel.updateOne(
-        { userId: newParticipantId },
-        { $push: { rooms: room._id } },
-      );
-      await RoomModel.updateOne(
-        { roomId },
-        {
-          $push: {
-            participants: participant._id,
-            activeParticipants: participant._id,
-          },
-        },
-      );
-      const newParticipantSocketId = await redisClient.get(newParticipantId);
-      if (newParticipantSocketId) {
-        const secondParticipantSocket = io
-          .of("/")
-          .sockets.get(newParticipantSocketId);
-        secondParticipantSocket!.join(createRoomName(room.roomId));
-      }
-    }, "add participant error");
-  });
 };
