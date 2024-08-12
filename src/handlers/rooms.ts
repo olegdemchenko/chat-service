@@ -14,10 +14,10 @@ import {
   removeActiveParticipant,
 } from "../db/utils/rooms";
 import {
-  addRoom,
+  saveRoomToUserRooms,
   getUserWithRooms,
   getUser,
-  removeRoom,
+  removeRoomFromUserRooms,
 } from "../db/utils/users";
 import { isSocketIdSaved } from "../redisClient";
 import { deleteRoomMessages } from "../db/utils/messages";
@@ -98,7 +98,7 @@ export const handleConnectToRoom = (
       const { user } = socket.data;
       await addActiveParticipant(roomId, user._id);
       const room = await getRoom(roomId);
-      await addRoom(user._id, room._id);
+      await saveRoomToUserRooms(user._id, room._id);
       await socket.join(getRoomName(roomId));
       callback();
       await sendMessage(
@@ -128,8 +128,8 @@ export const handleCreateRoom = (
         const creator = socket.data.user;
         const secondParticipant = await getUser(secondParticipantId);
         const newRoom = await createNewRoom(creator._id, secondParticipant._id);
-        await addRoom(creator._id, newRoom._id);
-        await addRoom(secondParticipant._id, newRoom._id);
+        await saveRoomToUserRooms(creator._id, newRoom._id);
+        await saveRoomToUserRooms(secondParticipant._id, newRoom._id);
         await socket.join(getRoomName(newRoom.roomId));
         const secondParticipantSocketId = await redisClient.get(
           secondParticipant.userId,
@@ -178,7 +178,7 @@ export const handleLeaveRoom = (
       logErrors(async () => {
         const { userId } = socket.data.user;
         const room = await getRoom(roomId);
-        await removeRoom(userId, room._id);
+        await removeRoomFromUserRooms(userId, room._id);
         const roomParticipantsCount = room.activeParticipants.length;
         if (roomParticipantsCount === 1) {
           await deleteRoomMessages(room.messages);

@@ -2,7 +2,7 @@ import { Types } from "mongoose";
 import UserModel from "../models/User";
 import { Room } from "../models/Room";
 
-export const addRoom = async (
+export const saveRoomToUserRooms = async (
   participantId: Types.ObjectId,
   roomId: Types.ObjectId,
 ) => {
@@ -15,7 +15,10 @@ export const addRoom = async (
   return result;
 };
 
-export const removeRoom = async (userId: string, roomId: Types.ObjectId) => {
+export const removeRoomFromUserRooms = async (
+  userId: string,
+  roomId: Types.ObjectId,
+) => {
   const result = await UserModel.updateOne(
     { userId },
     { $pull: { rooms: roomId } },
