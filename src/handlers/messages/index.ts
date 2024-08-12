@@ -5,8 +5,8 @@ import {
   deleteMessage,
   getMessage,
   updateMessage,
-} from "../../db/functions/messages";
-import { removeMessage } from "../../db/functions/rooms";
+} from "../../db/utils/messages";
+import { removeMessage } from "../../db/utils/rooms";
 import { getRoomName, logErrors } from "../../utils";
 import sendMessage from "./sendMessage";
 

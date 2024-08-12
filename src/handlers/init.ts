@@ -1,7 +1,7 @@
 import { RedisClientType } from "@redis/client";
 import { CustomSocket } from "../types";
 import { logErrors } from "../utils";
-import { getUserRooms } from "../db/functions/rooms";
+import { getUserRooms } from "../db/utils/rooms";
 import { saveSocketId, deleteSocketId, isSocketIdSaved } from "../redisClient";
 
 export const handleUpdateUserStatus = (

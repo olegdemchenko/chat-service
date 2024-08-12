@@ -1,7 +1,7 @@
 import { RedisClientType } from "@redis/client";
 import { CustomSocket } from "../types";
 import { logErrors } from "../utils";
-import { findUsers } from "../db/functions/users";
+import { findUsers } from "../db/utils/users";
 import { isSocketIdSaved } from "../redisClient";
 
 export const handleFindUsers = (

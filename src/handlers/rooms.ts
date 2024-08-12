@@ -12,15 +12,15 @@ import {
   getRoomByParticipants,
   getRoomWithMessages,
   removeActiveParticipant,
-} from "../db/functions/rooms";
+} from "../db/utils/rooms";
 import {
   addRoom,
   getUserWithRooms,
   getUser,
   removeRoom,
-} from "../db/functions/users";
+} from "../db/utils/users";
 import { isSocketIdSaved } from "../redisClient";
-import { deleteRoomMessages } from "../db/functions/messages";
+import { deleteRoomMessages } from "../db/utils/messages";
 
 interface RoomWithParticipantStatus {
   roomId: string;

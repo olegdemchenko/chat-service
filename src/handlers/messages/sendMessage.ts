@@ -2,7 +2,7 @@ import _ from "lodash";
 import { CustomSocket, IOServer } from "../../types";
 import RoomModel from "../../db/models/Room";
 import { type ResponseMessage } from ".";
-import { createMessage } from "../../db/functions/messages";
+import { createMessage } from "../../db/utils/messages";
 
 export default async (
   socket: CustomSocket,
