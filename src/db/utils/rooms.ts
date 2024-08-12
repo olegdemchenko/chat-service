@@ -28,7 +28,7 @@ export const deleteRoom = async (roomId: string) => {
   return result;
 };
 
-export const removeMessage = async (
+export const removeMessageFromRoom = async (
   roomId: string,
   messageId: Types.ObjectId,
 ) => {

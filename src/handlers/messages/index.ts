@@ -6,7 +6,7 @@ import {
   getMessage,
   updateMessage,
 } from "../../db/utils/messages";
-import { removeMessage } from "../../db/utils/rooms";
+import { removeMessageFromRoom } from "../../db/utils/rooms";
 import { getRoomName, logErrors } from "../../utils";
 import sendMessage from "./sendMessage";
 
@@ -75,7 +75,7 @@ export const handleDeleteMessage = (socket: CustomSocket) => {
     (roomId: string, messageId: string, callback: () => void) => {
       logErrors(async () => {
         const message = await getMessage(messageId);
-        await removeMessage(roomId, message._id);
+        await removeMessageFromRoom(roomId, message._id);
         socket
           .to(getRoomName(roomId))
           .emit("message:delete", roomId, messageId);
