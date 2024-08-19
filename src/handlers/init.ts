@@ -27,19 +27,26 @@ export const handleSendUserData = (
       const { _id } = socket.data.user;
       const userRooms = await getUserRooms(_id);
       const roomsWithUsersStatuses = await Promise.all(
-        userRooms.map(async ({ roomId, messages, participants }) => {
-          const participantsWithStatuses = await Promise.all(
-            participants.map(async ({ userId, name }) => {
-              return {
-                userId,
-                name,
-                isOnline: await isSocketIdSaved(redisClient, userId),
-              };
-            }),
-          );
+        userRooms.map(
+          async ({ roomId, messages, participants, messagesCount }) => {
+            const participantsWithStatuses = await Promise.all(
+              participants.map(async ({ userId, name }) => {
+                return {
+                  userId,
+                  name,
+                  isOnline: await isSocketIdSaved(redisClient, userId),
+                };
+              }),
+            );
 
-          return { roomId, messages, participants: participantsWithStatuses };
-        }),
+            return {
+              roomId,
+              messages,
+              participants: participantsWithStatuses,
+              messagesCount,
+            };
+          },
+        ),
       );
       callback(roomsWithUsersStatuses);
     }, "getUserData error");

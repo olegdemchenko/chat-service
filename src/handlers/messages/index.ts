@@ -9,13 +9,7 @@ import {
 import { removeMessageFromRoom } from "../../db/utils/rooms";
 import { getRoomName, logErrors } from "../../utils";
 import sendMessage from "./sendMessage";
-
-export interface ResponseMessage {
-  messageId: string;
-  text: string;
-  author: string;
-  lastModified: Date;
-}
+import { Message } from "../../db/models/Message";
 
 export const handleSendMessage = (
   socket: CustomSocket,
@@ -24,11 +18,7 @@ export const handleSendMessage = (
 ) => {
   socket.on(
     "message",
-    (
-      roomId: string,
-      text: string,
-      callback: (newMessage: ResponseMessage) => void,
-    ) => {
+    (roomId: string, text: string, callback: (newMessage: Message) => void) => {
       logErrors(async () => {
         await sendMessage(
           socket,
@@ -51,7 +41,7 @@ export const handleUpdateMessage = (socket: CustomSocket) => {
       roomId: string,
       messageId: string,
       newText: string,
-      callback: (message: Omit<ResponseMessage, "author">) => void,
+      callback: (message: Omit<Message, "author">) => void,
     ) => {
       logErrors(async () => {
         const updatedMessageDocument = await updateMessage(messageId, newText);
@@ -59,7 +49,9 @@ export const handleUpdateMessage = (socket: CustomSocket) => {
           "messageId",
           "text",
           "lastModified",
-        ]) as Omit<ResponseMessage, "author">;
+          "createdAt",
+          "updatedAt",
+        ]) as Omit<Message, "author">;
         socket
           .to(getRoomName(roomId))
           .emit("message:update", roomId, updatedMessage);

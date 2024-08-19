@@ -1,8 +1,10 @@
 import { Types } from "mongoose";
 import { v4 as uuidv4 } from "uuid";
-import RoomModel from "../models/Room";
+import RoomModel, { Room } from "../models/Room";
 import { Message } from "../models/Message";
 import { User } from "../models/User";
+
+const messagesPerPage = 15;
 
 export const getRoom = async (roomId: string) => {
   const room = await RoomModel.findOne({ roomId });
@@ -28,6 +30,21 @@ export const deleteRoom = async (roomId: string) => {
   return result;
 };
 
+export const addMessageToRoom = async (
+  roomId: string,
+  messageId: Types.ObjectId,
+) => {
+  const result = await RoomModel.updateOne(
+    { roomId },
+    {
+      $push: {
+        messages: messageId,
+      },
+    },
+  );
+  return result;
+};
+
 export const removeMessageFromRoom = async (
   roomId: string,
   messageId: Types.ObjectId,
@@ -40,19 +57,65 @@ export const removeMessageFromRoom = async (
 };
 
 export const getUserRooms = async (id: Types.ObjectId) => {
-  const userRooms = await RoomModel.find({
-    activeParticipants: { $elemMatch: { $eq: id } },
-  })
-    .populate<{ messages: Message[] }>({
-      path: "messages",
-      select: "messageId text author lastModified -_id",
-    })
-    .populate<{ participants: User[] }>({
-      path: "participants",
-      match: { _id: { $ne: id } },
-      select: "userId name -_id",
-    });
-  return userRooms;
+  const userRooms = await RoomModel.aggregate([
+    {
+      $match: {
+        activeParticipants: id,
+      },
+    },
+    {
+      $lookup: {
+        from: "users",
+        localField: "participants",
+        foreignField: "_id",
+        as: "participants",
+      },
+    },
+    {
+      $lookup: {
+        from: "messages",
+        localField: "messages",
+        foreignField: "_id",
+        as: "messages",
+      },
+    },
+    {
+      $project: {
+        roomId: 1,
+        participants: {
+          $filter: {
+            input: "$participants",
+            as: "participant",
+            cond: { $ne: ["$$participant._id", id] },
+          },
+        },
+        messages: 1,
+        messagesCount: {
+          $size: "$messages",
+        },
+      },
+    },
+    {
+      $project: {
+        roomId: 1,
+        participants: 1,
+        messages: {
+          $slice: [
+            {
+              $sortArray: {
+                input: "$messages",
+                sortBy: { createdAt: -1 },
+              },
+            },
+            0,
+            messagesPerPage,
+          ],
+        },
+        messagesCount: 1,
+      },
+    },
+  ]);
+  return userRooms as Room<Message, User>[];
 };
 
 export const addActiveParticipant = async (
@@ -92,8 +155,82 @@ export const getRoomByParticipants = async (
 };
 
 export const getRoomWithMessages = async (roomId: string) => {
-  const roomWithMessages = await RoomModel.findOne({ roomId }).populate<{
-    messages: Message[];
-  }>("messages");
-  return roomWithMessages!;
+  const roomWithMessages = await RoomModel.aggregate([
+    {
+      $match: {
+        roomId,
+      },
+    },
+    {
+      $lookup: {
+        from: "messages",
+        localField: "messages",
+        foreignField: "_id",
+        as: "messages",
+      },
+    },
+    {
+      $project: {
+        roomId: 1,
+        messages: 1,
+        messagesCount: {
+          $size: "$messages",
+        },
+      },
+    },
+    {
+      $project: {
+        roomId: 1,
+        messages: {
+          $slice: [
+            {
+              $sortArray: {
+                input: "$messages",
+                sortBy: { createdAt: -1 },
+              },
+            },
+            0,
+            messagesPerPage,
+          ],
+        },
+        messagesCount: 1,
+      },
+    },
+  ]);
+  return roomWithMessages[0] as Room<Message, User>;
+};
+
+export const getMoreRoomMessages = async (roomId: string, page: number) => {
+  const aggregationResult = (await RoomModel.aggregate([
+    {
+      $match: {
+        roomId,
+      },
+    },
+    {
+      $lookup: {
+        from: "messages",
+        localField: "messages",
+        foreignField: "_id",
+        as: "messages",
+      },
+    },
+    {
+      $project: {
+        messages: {
+          $slice: [
+            {
+              $sortArray: {
+                input: "$messages",
+                sortBy: { createdAt: -1 },
+              },
+            },
+            messagesPerPage * (page - 1),
+            messagesPerPage,
+          ],
+        },
+      },
+    },
+  ])) as [{ messages: Message[] }];
+  return aggregationResult[0].messages;
 };

@@ -7,7 +7,6 @@ export const createMessage = async (text: string, author: string) => {
     messageId: uuidv4(),
     text,
     author,
-    lastModified: new Date(),
   });
   await newMessage.save();
   return newMessage;
@@ -28,7 +27,7 @@ export const deleteRoomMessages = async (
 export const updateMessage = async (messageId: string, text: string) => {
   const updatedMessage = await MessageModel.findOneAndUpdate(
     { messageId },
-    { text, $currentDate: { lastModified: true } },
+    { text },
   );
   return updatedMessage;
 };

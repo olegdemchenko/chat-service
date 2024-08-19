@@ -8,6 +8,7 @@ import {
   addActiveParticipant,
   createNewRoom,
   deleteRoom,
+  getMoreRoomMessages,
   getRoom,
   getRoomByParticipants,
   getRoomWithMessages,
@@ -28,6 +29,7 @@ interface RoomWithParticipantStatus {
   participants: (Omit<User, "externalId" | "rooms"> & {
     isOnline: boolean;
   })[];
+  messagesCount: number;
 }
 
 export const handleConnectToRooms = (socket: CustomSocket) => {
@@ -82,6 +84,7 @@ export const handleFindExistingRoom = (
               isOnline: isSecondParticipantOnline,
             },
           ],
+          messagesCount: existingRoomWithMessages.messagesCount,
         });
       }, "find existing room error");
     },
@@ -161,8 +164,21 @@ export const handleCreateRoom = (
               isOnline: Boolean(secondParticipantSocketId),
             },
           ],
+          messagesCount: 0,
         });
       }, "create room error");
+    },
+  );
+};
+
+export const handleLoadMoreMessages = (socket: CustomSocket) => {
+  socket.on(
+    "loadMoreMessages",
+    (roomId: string, page: number, callback: (messages: Message[]) => void) => {
+      logErrors(async () => {
+        const messages = await getMoreRoomMessages(roomId, page);
+        callback(messages);
+      }, "load more messages error");
     },
   );
 };

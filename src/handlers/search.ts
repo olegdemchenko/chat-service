@@ -23,7 +23,7 @@ export const handleFindUsers = (
       ) => void,
     ) => {
       logErrors(async () => {
-        const resultsPerPage = 3;
+        const resultsPerPage = 4;
         const [match, matchCount] = await findUsers(
           query,
           socket.data.user.externalId,
