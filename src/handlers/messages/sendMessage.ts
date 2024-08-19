@@ -3,6 +3,8 @@ import { CustomSocket, IOServer } from "../../types";
 import { Message } from "../../db/models/Message";
 import { createMessage } from "../../db/utils/messages";
 import { addMessageToRoom } from "../../db/utils/rooms";
+import { ChatEvents } from "../../constants";
+import { getRoomName } from "../../utils";
 
 export default async (
   socket: CustomSocket,
@@ -23,9 +25,9 @@ export default async (
     "updatedAt",
   ]);
   if (to === "excludeAuthor") {
-    socket.to(`room:${roomId}`).emit("message", roomId, message);
+    socket.to(getRoomName(roomId)).emit(ChatEvents.message, roomId, message);
     callback?.(message as Message);
   } else {
-    io.to(`room:${roomId}`).emit("message", roomId, message);
+    io.to(getRoomName(roomId)).emit(ChatEvents.message, roomId, message);
   }
 };

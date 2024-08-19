@@ -10,6 +10,7 @@ import { removeMessageFromRoom } from "../../db/utils/rooms";
 import { getRoomName, logErrors } from "../../utils";
 import sendMessage from "./sendMessage";
 import { Message } from "../../db/models/Message";
+import { ChatEvents } from "../../constants";
 
 export const handleSendMessage = (
   socket: CustomSocket,
@@ -17,7 +18,7 @@ export const handleSendMessage = (
   io: IOServer,
 ) => {
   socket.on(
-    "message",
+    ChatEvents.message,
     (roomId: string, text: string, callback: (newMessage: Message) => void) => {
       logErrors(async () => {
         await sendMessage(
@@ -36,7 +37,7 @@ export const handleSendMessage = (
 
 export const handleUpdateMessage = (socket: CustomSocket) => {
   socket.on(
-    "message:update",
+    ChatEvents.updateMessage,
     (
       roomId: string,
       messageId: string,
@@ -63,14 +64,14 @@ export const handleUpdateMessage = (socket: CustomSocket) => {
 
 export const handleDeleteMessage = (socket: CustomSocket) => {
   socket.on(
-    "message:delete",
+    ChatEvents.deleteMessage,
     (roomId: string, messageId: string, callback: () => void) => {
       logErrors(async () => {
         const message = await getMessage(messageId);
         await removeMessageFromRoom(roomId, message._id);
         socket
           .to(getRoomName(roomId))
-          .emit("message:delete", roomId, messageId);
+          .emit(ChatEvents.deleteMessage, roomId, messageId);
         await deleteMessage(messageId);
         callback();
       }, "message:delete error");

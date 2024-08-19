@@ -3,13 +3,14 @@ import { CustomSocket } from "../types";
 import { logErrors } from "../utils";
 import { findUsers } from "../db/utils/users";
 import { isSocketIdSaved } from "../redisClient";
+import { ChatEvents, USERS_PER_PAGE } from "../constants";
 
 export const handleFindUsers = (
   socket: CustomSocket,
   redisClient: RedisClientType,
 ) => {
   socket.on(
-    "findUsers",
+    ChatEvents.findUsers,
     (
       query: string,
       page: number,
@@ -23,12 +24,11 @@ export const handleFindUsers = (
       ) => void,
     ) => {
       logErrors(async () => {
-        const resultsPerPage = 4;
         const [match, matchCount] = await findUsers(
           query,
           socket.data.user.externalId,
           page,
-          resultsPerPage,
+          USERS_PER_PAGE,
         );
         const usersWithStatuses = await Promise.all(
           match.map(async ({ userId, name }) => ({

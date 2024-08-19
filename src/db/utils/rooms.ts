@@ -3,8 +3,7 @@ import { v4 as uuidv4 } from "uuid";
 import RoomModel, { Room } from "../models/Room";
 import { Message } from "../models/Message";
 import { User } from "../models/User";
-
-const messagesPerPage = 15;
+import { MESSAGES_PER_PAGE } from "../../constants";
 
 export const getRoom = async (roomId: string) => {
   const room = await RoomModel.findOne({ roomId });
@@ -108,7 +107,7 @@ export const getUserRooms = async (id: Types.ObjectId) => {
               },
             },
             0,
-            messagesPerPage,
+            MESSAGES_PER_PAGE,
           ],
         },
         messagesCount: 1,
@@ -190,7 +189,7 @@ export const getRoomWithMessages = async (roomId: string) => {
               },
             },
             0,
-            messagesPerPage,
+            MESSAGES_PER_PAGE,
           ],
         },
         messagesCount: 1,
@@ -225,8 +224,8 @@ export const getMoreRoomMessages = async (roomId: string, page: number) => {
                 sortBy: { createdAt: -1 },
               },
             },
-            messagesPerPage * (page - 1),
-            messagesPerPage,
+            MESSAGES_PER_PAGE * (page - 1),
+            MESSAGES_PER_PAGE,
           ],
         },
       },

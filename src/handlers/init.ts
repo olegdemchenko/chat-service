@@ -3,6 +3,7 @@ import { CustomSocket } from "../types";
 import { logErrors } from "../utils";
 import { getUserRooms } from "../db/utils/rooms";
 import { saveSocketId, deleteSocketId, isSocketIdSaved } from "../redisClient";
+import { ChatEvents } from "../constants";
 
 export const handleUpdateUserStatus = (
   socket: CustomSocket,
@@ -22,7 +23,7 @@ export const handleSendUserData = (
   socket: CustomSocket,
   redisClient: RedisClientType,
 ) => {
-  socket.on("getUserRooms", (callback) => {
+  socket.on(ChatEvents.getUserRooms, (callback) => {
     logErrors(async () => {
       const { _id } = socket.data.user;
       const userRooms = await getUserRooms(_id);

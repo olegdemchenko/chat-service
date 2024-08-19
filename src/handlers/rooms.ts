@@ -22,6 +22,7 @@ import {
 } from "../db/utils/users";
 import { isSocketIdSaved } from "../redisClient";
 import { deleteRoomMessages } from "../db/utils/messages";
+import { ChatEvents } from "../constants";
 
 interface RoomWithParticipantStatus {
   roomId: string;
@@ -37,11 +38,11 @@ export const handleConnectToRooms = (socket: CustomSocket) => {
     const userWithRooms = await getUserWithRooms(socket.data.user.userId);
     const rooms = userWithRooms.rooms.map(({ roomId }) => getRoomName(roomId));
     await socket.join(rooms);
-    socket.to(rooms).emit("userJoin", socket.data.user.userId);
+    socket.to(rooms).emit(ChatEvents.userJoin, socket.data.user.userId);
 
     socket.on("disconnect", () => {
       logErrors(() => {
-        socket.to(rooms).emit("userLeave", socket.data.user.userId);
+        socket.to(rooms).emit(ChatEvents.userLeave, socket.data.user.userId);
         rooms.forEach((room) => socket.leave(room));
       }, "socket leave rooms error");
     });
@@ -53,7 +54,7 @@ export const handleFindExistingRoom = (
   redisClient: RedisClientType,
 ) => {
   socket.on(
-    "findRoom",
+    ChatEvents.findRoom,
     (
       secondParticipantId: string,
       callback: (room: RoomWithParticipantStatus | null) => void,
@@ -122,7 +123,7 @@ export const handleCreateRoom = (
   io: IOServer,
 ) => {
   socket.on(
-    "createRoom",
+    ChatEvents.createRoom,
     (
       secondParticipantId: string,
       callback: (newRoom: RoomWithParticipantStatus) => void,
@@ -173,7 +174,7 @@ export const handleCreateRoom = (
 
 export const handleLoadMoreMessages = (socket: CustomSocket) => {
   socket.on(
-    "loadMoreMessages",
+    ChatEvents.loadMoreMessages,
     (roomId: string, page: number, callback: (messages: Message[]) => void) => {
       logErrors(async () => {
         const messages = await getMoreRoomMessages(roomId, page);
@@ -189,7 +190,7 @@ export const handleLeaveRoom = (
   io: IOServer,
 ) => {
   socket.on(
-    "leaveRoom",
+    ChatEvents.leaveRoom,
     (roomId: string, callback: (status: boolean) => void) => {
       logErrors(async () => {
         const { userId } = socket.data.user;
