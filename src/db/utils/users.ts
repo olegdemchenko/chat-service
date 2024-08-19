@@ -47,7 +47,7 @@ export const findUsers = async (
   limit: number,
 ) => {
   const searchCriteria = {
-    name: { $regex: new RegExp(query) },
+    name: { $regex: new RegExp(query, "i") },
     externalId: { $ne: externalId },
   };
   const match = await UserModel.find(searchCriteria, null, {
