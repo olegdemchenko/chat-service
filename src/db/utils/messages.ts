@@ -28,6 +28,7 @@ export const updateMessage = async (messageId: string, text: string) => {
   const updatedMessage = await MessageModel.findOneAndUpdate(
     { messageId },
     { text },
+    { new: true },
   );
   return updatedMessage;
 };

@@ -49,13 +49,13 @@ export const handleUpdateMessage = (socket: CustomSocket) => {
         const updatedMessage = _.pick(updatedMessageDocument, [
           "messageId",
           "text",
-          "lastModified",
+          "author",
           "createdAt",
           "updatedAt",
-        ]) as Omit<Message, "author">;
+        ]) as Message;
         socket
           .to(getRoomName(roomId))
-          .emit("message:update", roomId, updatedMessage);
+          .emit(ChatEvents.updateMessage, roomId, updatedMessage);
         callback(updatedMessage);
       }, "message:update error");
     },
