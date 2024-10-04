@@ -21,6 +21,7 @@ export default async (
     "messageId",
     "author",
     "text",
+    "readBy",
     "createdAt",
     "updatedAt",
   ]);

@@ -55,7 +55,7 @@ export const removeMessageFromRoom = async (
   return result;
 };
 
-export const getUserRooms = async (id: Types.ObjectId) => {
+export const getUserRooms = async (id: Types.ObjectId, userId: string) => {
   const userRooms = await RoomModel.aggregate([
     {
       $match: {
@@ -98,6 +98,25 @@ export const getUserRooms = async (id: Types.ObjectId) => {
       $project: {
         roomId: 1,
         participants: 1,
+        messages: 1,
+        messagesCount: 1,
+        unreadMessagesCount: {
+          $size: {
+            $filter: {
+              input: "$messages",
+              as: "message",
+              cond: {
+                $not: [{ $in: [userId, "$$message.readBy"] }],
+              },
+            },
+          },
+        },
+      },
+    },
+    {
+      $project: {
+        roomId: 1,
+        participants: 1,
         messages: {
           $slice: [
             {
@@ -111,6 +130,7 @@ export const getUserRooms = async (id: Types.ObjectId) => {
           ],
         },
         messagesCount: 1,
+        unreadMessagesCount: 1,
       },
     },
   ]);

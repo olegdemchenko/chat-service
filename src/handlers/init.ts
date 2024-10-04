@@ -1,4 +1,7 @@
 import { RedisClientType } from "@redis/client";
+import { User } from "../db/models/User";
+import { Message } from "../db/models/Message";
+import { Room } from "../db/models/Room";
 import { CustomSocket } from "../types";
 import { logErrors } from "../utils";
 import { getUserRooms } from "../db/utils/rooms";
@@ -19,6 +22,12 @@ export const handleUpdateUserStatus = (
   }, "redis add user error");
 };
 
+export const handleSendUserId = (socket: CustomSocket) => {
+  socket.on(ChatEvents.getUserId, (callback: (userId: string) => void) => {
+    callback(socket.data.user.userId);
+  });
+};
+
 export const handleSendUserData = (
   socket: CustomSocket,
   redisClient: RedisClientType,
@@ -26,10 +35,18 @@ export const handleSendUserData = (
   socket.on(ChatEvents.getUserRooms, (callback) => {
     logErrors(async () => {
       const { _id } = socket.data.user;
-      const userRooms = await getUserRooms(_id);
+      const userRooms = await getUserRooms(_id, socket.data.user.userId);
       const roomsWithUsersStatuses = await Promise.all(
-        userRooms.map(
-          async ({ roomId, messages, participants, messagesCount }) => {
+        (
+          userRooms as (Room<Message, User> & { unreadMessagesCount: number })[]
+        ).map(
+          async ({
+            roomId,
+            messages,
+            participants,
+            messagesCount,
+            unreadMessagesCount,
+          }) => {
             const participantsWithStatuses = await Promise.all(
               participants.map(async ({ userId, name }) => {
                 return {
@@ -45,6 +62,7 @@ export const handleSendUserData = (
               messages,
               participants: participantsWithStatuses,
               messagesCount,
+              unreadMessagesCount,
             };
           },
         ),

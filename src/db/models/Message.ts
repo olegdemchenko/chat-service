@@ -6,6 +6,7 @@ export interface Message {
   author: string;
   createdAt: Date;
   updateAt: Date;
+  readBy: string[];
 }
 
 export const messageSchema = new Schema<Message>(
@@ -17,6 +18,7 @@ export const messageSchema = new Schema<Message>(
     },
     text: String,
     author: String,
+    readBy: [String],
   },
   { timestamps: true },
 );

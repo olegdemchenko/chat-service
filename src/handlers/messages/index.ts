@@ -4,6 +4,7 @@ import { CustomSocket, IOServer } from "../../types";
 import {
   deleteMessage,
   getMessage,
+  readMessages,
   updateMessage,
 } from "../../db/utils/messages";
 import { removeMessageFromRoom } from "../../db/utils/rooms";
@@ -33,6 +34,14 @@ export const handleSendMessage = (
       }, "message error");
     },
   );
+};
+
+export const handleReadMessages = (socket: CustomSocket) => {
+  socket.on(ChatEvents.readMessages, (messagesIds: Message["messageId"][]) => {
+    logErrors(async () => {
+      await readMessages(messagesIds, socket.data.user.userId);
+    }, "read messages error");
+  });
 };
 
 export const handleUpdateMessage = (socket: CustomSocket) => {
