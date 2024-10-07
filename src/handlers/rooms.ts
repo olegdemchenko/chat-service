@@ -31,6 +31,7 @@ interface RoomWithParticipantStatus {
     isOnline: boolean;
   })[];
   messagesCount: number;
+  unreadMessagesCount: number;
 }
 
 export const handleConnectToRooms = (socket: CustomSocket) => {
@@ -70,6 +71,7 @@ export const handleFindExistingRoom = (
         }
         const existingRoomWithMessages = await getRoomWithMessages(
           existingRoom.roomId,
+          socket.data.user.userId,
         );
         const isSecondParticipantOnline = await isSocketIdSaved(
           redisClient,
@@ -86,6 +88,7 @@ export const handleFindExistingRoom = (
             },
           ],
           messagesCount: existingRoomWithMessages.messagesCount,
+          unreadMessagesCount: existingRoomWithMessages.unreadMessagesCount,
         });
       }, "find existing room error");
     },
@@ -153,6 +156,8 @@ export const handleCreateRoom = (
               },
             ],
             messages: [],
+            messagesCount: 0,
+            unreadMessagesCount: 0,
           });
         }
         callback({
@@ -166,6 +171,7 @@ export const handleCreateRoom = (
             },
           ],
           messagesCount: 0,
+          unreadMessagesCount: 0,
         });
       }, "create room error");
     },

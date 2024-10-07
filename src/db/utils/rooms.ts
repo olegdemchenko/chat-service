@@ -173,7 +173,7 @@ export const getRoomByParticipants = async (
   return room!;
 };
 
-export const getRoomWithMessages = async (roomId: string) => {
+export const getRoomWithMessages = async (roomId: string, userId: string) => {
   const roomWithMessages = await RoomModel.aggregate([
     {
       $match: {
@@ -200,6 +200,24 @@ export const getRoomWithMessages = async (roomId: string) => {
     {
       $project: {
         roomId: 1,
+        messages: 1,
+        messagesCount: 1,
+        unreadMessagesCount: {
+          $size: {
+            $filter: {
+              input: "$messages",
+              as: "message",
+              cond: {
+                $not: [{ $in: [userId, "$$message.readBy"] }],
+              },
+            },
+          },
+        },
+      },
+    },
+    {
+      $project: {
+        roomId: 1,
         messages: {
           $slice: [
             {
@@ -213,10 +231,13 @@ export const getRoomWithMessages = async (roomId: string) => {
           ],
         },
         messagesCount: 1,
+        unreadMessagesCount: 1,
       },
     },
   ]);
-  return roomWithMessages[0] as Room<Message, User>;
+  return roomWithMessages[0] as Room<Message, User> & {
+    unreadMessagesCount: number;
+  };
 };
 
 export const getMoreRoomMessages = async (roomId: string, skip: number) => {
