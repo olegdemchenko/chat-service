@@ -219,7 +219,7 @@ export const getRoomWithMessages = async (roomId: string) => {
   return roomWithMessages[0] as Room<Message, User>;
 };
 
-export const getMoreRoomMessages = async (roomId: string, page: number) => {
+export const getMoreRoomMessages = async (roomId: string, skip: number) => {
   const aggregationResult = (await RoomModel.aggregate([
     {
       $match: {
@@ -244,7 +244,7 @@ export const getMoreRoomMessages = async (roomId: string, page: number) => {
                 sortBy: { createdAt: -1 },
               },
             },
-            MESSAGES_PER_PAGE * (page - 1),
+            skip,
             MESSAGES_PER_PAGE,
           ],
         },
