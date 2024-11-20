@@ -33,6 +33,11 @@ module.exports = {
     "class-methods-use-this": ["warn"],
     "@typescript-eslint/no-unsafe-call": ["off"],
     "@typescript-eslint/no-misused-promises": ["off"],
+    "@typescript-eslint/no-explicit-any": ["warn"],
     "import/prefer-default-export": ["off"],
+    "no-param-reassign": ["warn"],
+    "no-underscore-dangle": ["off"],
+    "@typescript-eslint/no-floating-promises": ["warn"],
+    "@typescript-eslint/naming-convention": ["warn"]
   },
 };

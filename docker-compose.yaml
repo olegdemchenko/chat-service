@@ -1,0 +1,46 @@
+services:
+  server:
+    build:
+      context: .
+      target: dev
+    ports:
+      - ${PORT}:${PORT}
+      - ${DEBUG_PORT}:${DEBUG_PORT}
+    environment:
+      - PORT=${PORT}
+      - DB_URL=${DB_URL}
+    depends_on:
+      chat_db:
+        condition: service_healthy
+    volumes:
+      - ./src:/app/src
+  chat_db:
+    image: mongo
+    restart: always
+    volumes:
+      - chat-db-data:/data/db
+    environment:
+      MONGO_INITDB_DATABASE: ${DB_NAME}
+      MONGO_INITDB_ROOT_USERNAME: ${DB_USER}
+      MONGO_INITDB_ROOT_PASSWORD: ${DB_PASSWORD}
+    ports:
+      - ${DB_PORT}:${DB_PORT}
+    expose:
+      - ${DB_PORT}
+    healthcheck:
+      test: ["CMD","mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 10s
+      retries: 3
+      start_period: 20s
+  redis:
+    container_name: chat_redis
+    image: redis
+    restart: always
+    command: --port ${REDIS_PORT}
+    ports:
+      - ${REDIS_PORT}:${REDIS_PORT}
+    expose:
+      - ${REDIS_PORT}
+volumes:
+  chat-db-data:
