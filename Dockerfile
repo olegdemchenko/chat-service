@@ -9,4 +9,4 @@ RUN --mount=type=bind,source=package.json,target=package.json \
     yarn
 USER node
 COPY . .
-CMD yarn run dev
+CMD yarn run start:dev
