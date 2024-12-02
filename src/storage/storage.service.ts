@@ -12,7 +12,7 @@ export class StorageService {
     return await this.storage.get(key);
   }
 
-  async set(key: string, id: string) {
+  async add(key: string, id: string) {
     return await this.storage.set(key, id);
   }
 
@@ -22,5 +22,17 @@ export class StorageService {
 
   async has(key: string) {
     return Boolean(await this.storage.exists(key));
+  }
+
+  async setAdd(key: string, value: string) {
+    return await this.storage.sadd(key, value);
+  }
+
+  async setRemove(key: string, value: string) {
+    return await this.storage.srem(key, value);
+  }
+
+  async setIsMember(key: string, value: string) {
+    return Boolean(await this.storage.sismember(key, value));
   }
 }

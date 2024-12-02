@@ -3,8 +3,8 @@ export const USERS_PER_PAGE = 5;
 
 export enum ChatEvents {
   connect = 'connect',
-  connectError = 'connect_error',
   getUserRooms = 'getUserRooms',
+  userId = 'userId',
   findUsers = 'findUsers',
   findRoom = 'findRoom',
   connectToRoom = 'connectToRoom',
@@ -19,4 +19,5 @@ export enum ChatEvents {
   userJoin = 'userJoin',
   userLeave = 'userLeave',
   getUserId = 'getUserId',
+  customError = 'customError',
 }
