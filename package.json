@@ -26,8 +26,12 @@
   },
   "dependencies": {
     "@nestjs/common": "^9.0.0",
+    "@nestjs/config": "^3.3.0",
     "@nestjs/core": "^9.0.0",
+    "@nestjs/mongoose": "^10.1.0",
     "@nestjs/platform-express": "^9.0.0",
+    "@nestjs/platform-socket.io": "^10.4.8",
+    "@nestjs/websockets": "^10.4.8",
     "@redis/client": "^1.5.14",
     "axios": "^1.6.8",
     "cors": "^2.8.5",
