@@ -22,7 +22,7 @@ export class UsersService {
     return await this.userModel.findOne({ userId }, 'name');
   }
 
-  async joinRoom(userId: User['userId'], roomId: Room['roomId']) {
+  async addRoom(userId: User['userId'], roomId: Room['roomId']) {
     return await this.userModel.updateOne(
       {
         _id: userId,
@@ -31,7 +31,7 @@ export class UsersService {
     );
   }
 
-  async leaveRoom(userId: User['userId'], roomId: Room['roomId']) {
+  async deleteRoom(userId: User['userId'], roomId: Room['roomId']) {
     return await this.userModel.updateOne(
       { userId },
       { $pull: { rooms: roomId } },

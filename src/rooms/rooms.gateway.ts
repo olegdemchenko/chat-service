@@ -45,8 +45,8 @@ export class RoomsGateway {
     return await this.roomsService.getAllUserCommunications(userId);
   }
 
-  @SubscribeMessage(ChatEvents.userOnline)
-  async handleUserOnline(
+  @SubscribeMessage(ChatEvents.joinRooms)
+  async handleJoinRooms(
     @ConnectedSocket() client: Socket,
     @MessageBody() userId: User['userId'],
   ) {
@@ -55,8 +55,8 @@ export class RoomsGateway {
     client.to(roomsNames).emit(ChatEvents.userJoin, userId);
   }
 
-  @SubscribeMessage(ChatEvents.userOffline)
-  async handleUserOffline(
+  @SubscribeMessage(ChatEvents.leaveRooms)
+  async handleLeaveRooms(
     @ConnectedSocket() client: Socket,
     @MessageBody() userId: User['userId'],
   ) {
@@ -81,7 +81,7 @@ export class RoomsGateway {
     @MessageBody('userId') userId: User['userId'],
   ) {
     await this.roomsService.addActiveParticipant(roomId, userId);
-    await this.usersService.joinRoom(userId, roomId);
+    await this.usersService.addRoom(userId, roomId);
 
     //TODO send notification about joining room after Messages module is ready
     await client.join(getRoomName(roomId));
@@ -97,8 +97,8 @@ export class RoomsGateway {
       firstParticipantId,
       secondParticipantId,
     );
-    await this.usersService.joinRoom(firstParticipantId, newRoom.roomId);
-    await this.usersService.joinRoom(secondParticipantId, newRoom.roomId);
+    await this.usersService.addRoom(firstParticipantId, newRoom.roomId);
+    await this.usersService.addRoom(secondParticipantId, newRoom.roomId);
     await client.join(getRoomName(newRoom.roomId));
     const isSecondParticipantOnline = await this.storageService.setIsMember(
       'active_users',
@@ -148,13 +148,13 @@ export class RoomsGateway {
     return messages;
   }
 
-  @SubscribeMessage(ChatEvents.leaveRoom)
-  async handleLeaveRoom(
+  @SubscribeMessage(ChatEvents.deleteRoom)
+  async handleDeleteRoom(
     @ConnectedSocket() client: Socket,
     @MessageBody('roomId') roomId: Room['roomId'],
     @MessageBody('userId') userId: User['userId'],
   ) {
-    await this.usersService.leaveRoom(userId, roomId);
+    await this.usersService.deleteRoom(userId, roomId);
     const activeParticipants = await this.roomsService.getActiveParticipants(
       roomId,
     );

@@ -45,6 +45,7 @@ export class UsersGateway implements OnGatewayConnection, OnGatewayDisconnect {
         });
       }
       await this.storageService.add(client.id, userData.userId);
+      await this.storageService.add(userData.userId, client.id);
       await this.storageService.setAdd('active_users', userData.userId);
     } catch (e) {
       if (e instanceof AxiosError && e.response?.status === 400) {
@@ -58,6 +59,7 @@ export class UsersGateway implements OnGatewayConnection, OnGatewayDisconnect {
   async handleDisconnect(client: Socket) {
     const userId = await this.storageService.get(client.id);
     await this.storageService.delete(client.id);
+    await this.storageService.delete(userId);
     await this.storageService.setRemove('active_users', userId);
   }
 }
