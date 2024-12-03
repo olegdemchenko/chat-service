@@ -1,15 +1,21 @@
-import { WebSocketGateway, WebSocketServer } from '@nestjs/websockets';
+import {
+  WebSocketGateway,
+  WebSocketServer,
+  MessageBody,
+} from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
 import {
   OnGatewayConnection,
   OnGatewayDisconnect,
 } from '@nestjs/websockets/interfaces';
+import { SubscribeMessage } from '@nestjs/websockets/decorators';
 import axios, { AxiosError } from 'axios';
 import { ConfigService } from '@nestjs/config';
 import { ExternalUserInfo } from '../types';
 import { ChatEvents } from '../constants';
 import { UsersService } from './users.service';
 import { StorageService } from '../storage/storage.service';
+import { User } from './schemas/user.schema';
 
 @WebSocketGateway(5000, {
   cors: {
@@ -54,6 +60,15 @@ export class UsersGateway implements OnGatewayConnection, OnGatewayDisconnect {
       }
       throw e;
     }
+  }
+
+  @SubscribeMessage(ChatEvents.findUsers)
+  async handleFindUsers(
+    @MessageBody('userId') userId: User['userId'],
+    @MessageBody('query') query: string,
+    @MessageBody('page') page: number,
+  ) {
+    return await this.usersService.findUsers(userId, query, page);
   }
 
   async handleDisconnect(client: Socket) {

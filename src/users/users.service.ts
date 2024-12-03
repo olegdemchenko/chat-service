@@ -4,6 +4,7 @@ import { InjectModel } from '@nestjs/mongoose';
 import { User } from './schemas/user.schema';
 import { CreateUserDto } from './dto/create-user.dto';
 import { Room } from '../rooms/interfaces/room.interface';
+import { USERS_PER_PAGE } from '../constants';
 
 @Injectable()
 export class UsersService {
@@ -36,5 +37,18 @@ export class UsersService {
       { userId },
       { $pull: { rooms: roomId } },
     );
+  }
+
+  async findUsers(userId: User['userId'], query: string, page: number) {
+    const searchCriteria = {
+      name: { $regex: new RegExp(query, 'i') },
+      externalId: { $ne: userId },
+    };
+    const match = await this.userModel.find(searchCriteria, null, {
+      skip: page * USERS_PER_PAGE,
+      USERS_PER_PAGE,
+    });
+    const matchCount = await this.userModel.countDocuments(searchCriteria);
+    return [match, matchCount] as const;
   }
 }
