@@ -81,7 +81,8 @@ export class RoomsGateway {
     @MessageBody('userId') userId: User['userId'],
   ) {
     await this.roomsService.addActiveParticipant(roomId, userId);
-    //TODO add room to user's rooms
+    await this.usersService.joinRoom(userId, roomId);
+
     //TODO send notification about joining room after Messages module is ready
     await client.join(getRoomName(roomId));
   }
@@ -96,7 +97,8 @@ export class RoomsGateway {
       firstParticipantId,
       secondParticipantId,
     );
-    // TODO add saving new room to users' rooms
+    await this.usersService.joinRoom(firstParticipantId, newRoom.roomId);
+    await this.usersService.joinRoom(secondParticipantId, newRoom.roomId);
     await client.join(getRoomName(newRoom.roomId));
     const isSecondParticipantOnline = await this.storageService.setIsMember(
       'active_users',
@@ -152,7 +154,7 @@ export class RoomsGateway {
     @MessageBody('roomId') roomId: Room['roomId'],
     @MessageBody('userId') userId: User['userId'],
   ) {
-    // TODO add removing room from user's rooms
+    await this.usersService.leaveRoom(userId, roomId);
     const activeParticipants = await this.roomsService.getActiveParticipants(
       roomId,
     );
