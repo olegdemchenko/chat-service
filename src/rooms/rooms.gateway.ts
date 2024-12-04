@@ -6,7 +6,6 @@ import {
   ConnectedSocket,
 } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
-
 import { RoomsService } from './rooms.service';
 import { User } from '../users/schemas/user.schema';
 import { getRoomName } from '../utils';
@@ -83,12 +82,17 @@ export class RoomsGateway {
     @ConnectedSocket() client: Socket,
     @MessageBody('roomId') roomId: Room['roomId'],
     @MessageBody('userId') userId: User['userId'],
+    @MessageBody('userName') userName: User['name'],
   ) {
     await this.roomsService.addActiveParticipant(roomId, userId);
     await this.usersService.addRoom(userId, roomId);
 
-    //TODO send notification about joining room after Messages module is ready
     await client.join(getRoomName(roomId));
+    this.handleSendMessage({
+      roomId,
+      text: `User ${userName} joined the conversation`,
+      author: 'system',
+    });
   }
 
   @SubscribeMessage(ChatEvents.createRoom)
@@ -157,6 +161,7 @@ export class RoomsGateway {
     @ConnectedSocket() client: Socket,
     @MessageBody('roomId') roomId: Room['roomId'],
     @MessageBody('userId') userId: User['userId'],
+    @MessageBody('userName') userName: User['name'],
   ) {
     await this.usersService.deleteRoom(userId, roomId);
     const activeParticipants = await this.roomsService.getActiveParticipants(
@@ -168,7 +173,11 @@ export class RoomsGateway {
       await this.roomsService.deleteRoom(roomId);
     } else {
       await this.roomsService.deleteActiveParticipant(roomId, userId);
-      // TODO add sending a messages
+      this.handleSendMessage({
+        roomId,
+        text: `User ${userName} left the conversation`,
+        author: 'system',
+      });
     }
     await client.leave(getRoomName(roomId));
     return true;
