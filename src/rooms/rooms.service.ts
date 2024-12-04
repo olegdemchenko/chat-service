@@ -1,9 +1,13 @@
 import { Model } from 'mongoose';
 import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
+import { v4 as uuidv4 } from 'uuid';
 import { Room } from './interfaces/room.interface';
 import { User } from '../users/schemas/user.schema';
 import { MESSAGES_PER_PAGE } from '../constants';
+import { NewMessageDto } from './dto/new-message.dto';
+import { Message } from './interfaces/message.interface';
+import { UpdateMessageDto } from './dto/update-message.dto';
 
 @Injectable()
 export class RoomsService {
@@ -184,5 +188,51 @@ export class RoomsService {
 
   async deleteRoom(roomId: Room['roomId']) {
     return await this.roomModel.deleteOne({ roomId });
+  }
+
+  async addNewMessage({ roomId, text, author }: NewMessageDto) {
+    const newMessage: Message = {
+      messageId: uuidv4(),
+      text,
+      author,
+      createdAt: new Date(),
+      updateAt: new Date(),
+      readBy: [author],
+    };
+    await this.roomModel.updateOne(
+      { roomId },
+      {
+        $push: {
+          messages: newMessage,
+        },
+      },
+    );
+    return newMessage;
+  }
+
+  async updateMessage({ roomId, messageId, newText }: UpdateMessageDto) {
+    return await this.roomModel.updateOne(
+      {
+        roomId,
+      },
+      {
+        $set: {
+          'messages.$[element].text': newText,
+          'messages.$[element].updatedAt': new Date(),
+        },
+      },
+      { arrayFilters: [{ element: { messageId } }] },
+    );
+  }
+
+  async deleteMessage(roomId: Room['roomId'], messageId: Message['messageId']) {
+    return await this.roomModel.updateOne(
+      { roomId },
+      {
+        $pull: {
+          messages: { messageId },
+        },
+      },
+    );
   }
 }

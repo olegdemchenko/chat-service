@@ -13,7 +13,7 @@ export enum ChatEvents {
   createRoom = 'createRoom',
   deleteRoom = 'deleteRoom',
   newRoom = 'newRoom',
-  message = 'message',
+  newMessage = 'newMessage',
   loadMoreMessages = 'loadMoreMessages',
   readMessages = 'readMessages',
   updateMessage = 'updateMessage',

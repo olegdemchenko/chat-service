@@ -6,6 +6,7 @@ import {
   ConnectedSocket,
 } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
+
 import { RoomsService } from './rooms.service';
 import { User } from '../users/schemas/user.schema';
 import { getRoomName } from '../utils';
@@ -14,6 +15,9 @@ import { StorageService } from '../storage/storage.service';
 import _ from 'lodash';
 import { Room } from './interfaces/room.interface';
 import { UsersService } from '../users/users.service';
+import { NewMessageDto } from './dto/new-message.dto';
+import { UpdateMessageDto } from './dto/update-message.dto';
+import { Message } from './interfaces/message.interface';
 
 @WebSocketGateway(5000, {
   cors: {
@@ -168,5 +172,34 @@ export class RoomsGateway {
     }
     await client.leave(getRoomName(roomId));
     return true;
+  }
+
+  @SubscribeMessage(ChatEvents.newMessage)
+  async handleSendMessage(@MessageBody() newMessageDto: NewMessageDto) {
+    const newMessage = await this.roomsService.addNewMessage(newMessageDto);
+    this.server
+      .to(getRoomName(newMessageDto.roomId))
+      .emit(ChatEvents.newMessage, newMessage);
+  }
+
+  @SubscribeMessage(ChatEvents.updateMessage)
+  async handleUpdateMessage(@MessageBody() updateMessageDto: UpdateMessageDto) {
+    const updatedMessage = await this.roomsService.updateMessage(
+      updateMessageDto,
+    );
+    this.server
+      .to(getRoomName(updateMessageDto.roomId))
+      .emit(ChatEvents.updateMessage, updateMessageDto.roomId, updatedMessage);
+  }
+
+  @SubscribeMessage(ChatEvents.deleteMessage)
+  async handleDeleteMessage(
+    @MessageBody('roomId') roomId: Room['roomId'],
+    @MessageBody('messageId') messageId: Message['messageId'],
+  ) {
+    await this.roomsService.deleteMessage(roomId, messageId);
+    this.server
+      .to(getRoomName(roomId))
+      .emit(ChatEvents.deleteMessage, roomId, messageId);
   }
 }
