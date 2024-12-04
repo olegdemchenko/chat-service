@@ -191,6 +191,15 @@ export class RoomsGateway {
       .emit(ChatEvents.newMessage, newMessage);
   }
 
+  @SubscribeMessage(ChatEvents.readMessages)
+  async handleReadMessages(
+    @MessageBody('messagesIds') messagesIds: Message['messageId'],
+    @MessageBody('userId') userId: User['userId'],
+    @MessageBody('roomId') roomId: Room['roomId'],
+  ) {
+    await this.roomsService.readMessages(messagesIds, userId, roomId);
+  }
+
   @SubscribeMessage(ChatEvents.updateMessage)
   async handleUpdateMessage(@MessageBody() updateMessageDto: UpdateMessageDto) {
     const updatedMessage = await this.roomsService.updateMessage(

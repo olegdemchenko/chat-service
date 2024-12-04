@@ -228,4 +228,22 @@ export class RoomsService {
       },
     );
   }
+
+  async readMessages(
+    messagesIds: Message['messageId'][],
+    userId: User['userId'],
+    roomId: Room['roomId'],
+  ) {
+    return await this.roomModel.updateOne(
+      { roomId },
+      {
+        $push: {
+          'messages.$[element].readBy': userId,
+        },
+      },
+      {
+        arrayFilters: [{ element: { $in: [messagesIds] } }],
+      },
+    );
+  }
 }
