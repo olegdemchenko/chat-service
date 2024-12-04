@@ -2,6 +2,7 @@ import { Model } from 'mongoose';
 import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { v4 as uuidv4 } from 'uuid';
+import _ from 'lodash';
 import { Room } from './interfaces/room.interface';
 import { User } from '../users/schemas/user.schema';
 import { MESSAGES_PER_PAGE } from '../constants';
@@ -26,14 +27,6 @@ export class RoomsService {
           localField: 'participants',
           foreignField: 'userId',
           as: 'participants',
-        },
-      },
-      {
-        $lookup: {
-          from: 'messages',
-          localField: 'messages',
-          foreignField: 'userId',
-          as: 'messages',
         },
       },
       {
