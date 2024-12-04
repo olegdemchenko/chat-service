@@ -1,8 +1,8 @@
+import { BadRequestException } from '@nestjs/common';
 import {
   WebSocketGateway,
   WebSocketServer,
   MessageBody,
-  ConnectedSocket,
 } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
 import {
@@ -10,13 +10,10 @@ import {
   OnGatewayDisconnect,
 } from '@nestjs/websockets/interfaces';
 import { SubscribeMessage } from '@nestjs/websockets/decorators';
-import axios, { AxiosError } from 'axios';
-import { ConfigService } from '@nestjs/config';
-import { ExternalUserInfo } from '../types';
 import { ChatEvents } from '../constants';
 import { UsersService } from './users.service';
-import { StorageService } from '../storage/storage.service';
 import { User } from './schemas/user.schema';
+import { UsersProvider } from './users.provider';
 
 @WebSocketGateway(5000, {
   cors: {
@@ -29,33 +26,25 @@ export class UsersGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
   constructor(
     private usersService: UsersService,
-    private configService: ConfigService,
-    private storageService: StorageService,
+    private usersProvider: UsersProvider,
   ) {}
 
   async handleConnection(client: Socket) {
     const userToken = client.handshake.auth.token as string;
     try {
-      const { data: userInfo } = await axios.get<ExternalUserInfo>(
-        this.configService.get<string>('AUTH_SERVICE_URL'),
-        {
-          headers: {
-            Authorization: `Bearer ${userToken as string}`,
-          },
-        },
+      const userExternalInfo = await this.usersProvider.fetchUserExternalInfo(
+        userToken,
       );
-      let userData = await this.usersService.findByExternalId(userInfo.id);
-      if (!userData) {
-        userData = await this.usersService.create({
-          name: userInfo.name,
-          externalId: userInfo.id,
+      let user = await this.usersService.findByExternalId(userExternalInfo.id);
+      if (!user) {
+        user = await this.usersService.create({
+          name: userExternalInfo.name,
+          externalId: userExternalInfo.id,
         });
       }
-      await this.storageService.add(client.id, userData.userId);
-      await this.storageService.add(userData.userId, client.id);
-      await this.storageService.setAdd('active_users', userData.userId);
+      await this.usersProvider.saveUserConnection(user.id, client.id);
     } catch (e) {
-      if (e instanceof AxiosError && e.response?.status === 400) {
+      if (e instanceof BadRequestException) {
         client.emit(ChatEvents.customError, new Error('User token is invalid'));
         return;
       }
@@ -79,9 +68,6 @@ export class UsersGateway implements OnGatewayConnection, OnGatewayDisconnect {
   }
 
   async handleDisconnect(client: Socket) {
-    const userId = await this.storageService.get(client.id);
-    await this.storageService.delete(client.id);
-    await this.storageService.delete(userId);
-    await this.storageService.setRemove('active_users', userId);
+    await this.usersProvider.removeUserConnection(client.id);
   }
 }

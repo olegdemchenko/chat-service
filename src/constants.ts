@@ -7,6 +7,7 @@ export enum ChatEvents {
   leaveRooms = 'leaveRooms',
   getUserRooms = 'getUserRooms',
   getUserId = 'getUserId',
+  isUserOnline = 'isUserOnline',
   findUsers = 'findUsers',
   findRoom = 'findRoom',
   connectToRoom = 'connectToRoom',
