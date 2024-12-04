@@ -2,6 +2,7 @@ import {
   WebSocketGateway,
   WebSocketServer,
   MessageBody,
+  ConnectedSocket,
 } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
 import {
@@ -69,6 +70,12 @@ export class UsersGateway implements OnGatewayConnection, OnGatewayDisconnect {
     @MessageBody('page') page: number,
   ) {
     return await this.usersService.findUsers(userId, query, page);
+  }
+
+  @SubscribeMessage(ChatEvents.isUserOnline)
+  async handleIsUserOnline(@MessageBody('userId') userId: User['userId']) {
+    const isUserOnline = await this.usersService.isUserOnline(userId);
+    return isUserOnline;
   }
 
   async handleDisconnect(client: Socket) {

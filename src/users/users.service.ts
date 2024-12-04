@@ -5,10 +5,14 @@ import { User } from './schemas/user.schema';
 import { CreateUserDto } from './dto/create-user.dto';
 import { Room } from '../rooms/interfaces/room.interface';
 import { USERS_PER_PAGE } from '../constants';
+import { StorageService } from '../storage/storage.service';
 
 @Injectable()
 export class UsersService {
-  constructor(@InjectModel(User.name) private userModel: Model<User>) {}
+  constructor(
+    @InjectModel(User.name) private userModel: Model<User>,
+    private storageService: StorageService,
+  ) {}
 
   async create(createUserDto: CreateUserDto) {
     const createdUser = await this.userModel.create(createUserDto);
@@ -50,5 +54,11 @@ export class UsersService {
     });
     const matchCount = await this.userModel.countDocuments(searchCriteria);
     return [match, matchCount] as const;
+  }
+
+  async isUserOnline(userId: User['userId']) {
+    return Boolean(
+      await this.storageService.setIsMember('active_users', userId),
+    );
   }
 }
