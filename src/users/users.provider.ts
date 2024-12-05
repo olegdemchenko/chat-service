@@ -49,4 +49,18 @@ export class UsersProvider {
     await this.storageService.delete(userId);
     await this.storageService.setRemove('active_users', userId);
   }
+
+  async getUserId(clientId: Socket['id']) {
+    return await this.storageService.get(clientId);
+  }
+
+  async isUserOnline(userId: User['userId']) {
+    return Boolean(
+      await this.storageService.setIsMember('active_users', userId),
+    );
+  }
+
+  async getUserSocketId(userId: User['userId']) {
+    return await this.storageService.get(userId);
+  }
 }

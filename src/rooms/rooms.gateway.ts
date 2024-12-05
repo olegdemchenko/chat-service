@@ -10,13 +10,13 @@ import { RoomsService } from './rooms.service';
 import { User } from '../users/schemas/user.schema';
 import { getRoomName } from '../utils';
 import { ChatEvents } from '../constants';
-import { StorageService } from '../storage/storage.service';
 import _ from 'lodash';
 import { Room } from './interfaces/room.interface';
 import { UsersService } from '../users/users.service';
 import { NewMessageDto } from './dto/new-message.dto';
 import { UpdateMessageDto } from './dto/update-message.dto';
 import { Message } from './interfaces/message.interface';
+import { UsersProvider } from 'src/users/users.provider';
 
 @WebSocketGateway(5000, {
   cors: {
@@ -28,19 +28,14 @@ export class RoomsGateway {
   server: Server;
 
   constructor(
-    private storageService: StorageService,
     private usersService: UsersService,
+    private usersProvider: UsersProvider,
     private roomsService: RoomsService,
   ) {}
 
   async getRoomsNames(userId: Socket['id']) {
     const userRoomsIds = await this.roomsService.getUserRoomsIds(userId);
     return userRoomsIds.map(({ roomId }) => getRoomName(roomId));
-  }
-
-  @SubscribeMessage(ChatEvents.getUserId)
-  async handleGetUserId(@ConnectedSocket() client: Socket) {
-    return await this.storageService.get(client.id);
   }
 
   @SubscribeMessage(ChatEvents.getUserRooms)
@@ -108,8 +103,7 @@ export class RoomsGateway {
     await this.usersService.addRoom(firstParticipantId, newRoom.roomId);
     await this.usersService.addRoom(secondParticipantId, newRoom.roomId);
     await client.join(getRoomName(newRoom.roomId));
-    const isSecondParticipantOnline = await this.storageService.setIsMember(
-      'active_users',
+    const isSecondParticipantOnline = await this.usersProvider.isUserOnline(
       secondParticipantId,
     );
     const defaultRoomPayload = {
@@ -120,9 +114,8 @@ export class RoomsGateway {
       unreadMessagesCount: 0,
     };
     if (isSecondParticipantOnline) {
-      const secondParticipantSocketId = await this.storageService.get(
-        secondParticipantId,
-      );
+      const secondParticipantSocketId =
+        await this.usersProvider.getUserSocketId(secondParticipantId);
       const secondParticipantSocket = this.server
         .of('/')
         .sockets.get(secondParticipantSocketId);
@@ -193,7 +186,7 @@ export class RoomsGateway {
 
   @SubscribeMessage(ChatEvents.readMessages)
   async handleReadMessages(
-    @MessageBody('messagesIds') messagesIds: Message['messageId'],
+    @MessageBody('messagesIds') messagesIds: Message['messageId'][],
     @MessageBody('userId') userId: User['userId'],
     @MessageBody('roomId') roomId: Room['roomId'],
   ) {

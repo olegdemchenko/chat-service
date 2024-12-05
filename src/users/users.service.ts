@@ -55,10 +55,4 @@ export class UsersService {
     const matchCount = await this.userModel.countDocuments(searchCriteria);
     return [match, matchCount] as const;
   }
-
-  async isUserOnline(userId: User['userId']) {
-    return Boolean(
-      await this.storageService.setIsMember('active_users', userId),
-    );
-  }
 }
