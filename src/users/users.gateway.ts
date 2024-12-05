@@ -43,7 +43,7 @@ export class UsersGateway implements OnGatewayConnection, OnGatewayDisconnect {
           externalId: userExternalInfo.id,
         });
       }
-      await this.usersProvider.saveUserConnection(user.id, client.id);
+      await this.usersProvider.saveUserConnection(user.userId, client.id);
     } catch (e) {
       if (e instanceof BadRequestException) {
         client.emit(ChatEvents.customError, new Error('User token is invalid'));
@@ -64,7 +64,19 @@ export class UsersGateway implements OnGatewayConnection, OnGatewayDisconnect {
     @MessageBody('query') query: string,
     @MessageBody('page') page: number,
   ) {
-    return await this.usersService.findUsers(userId, query, page);
+    const [users, count] = await this.usersService.findUsers(
+      userId,
+      query,
+      page,
+    );
+    const usersWithStatuses = await Promise.all(
+      users.map(async ({ userId, name }) => ({
+        userId,
+        name,
+        isOnline: await this.usersProvider.isUserOnline(userId),
+      })),
+    );
+    return [usersWithStatuses, count];
   }
 
   @SubscribeMessage(ChatEvents.isUserOnline)

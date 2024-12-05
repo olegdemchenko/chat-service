@@ -5,14 +5,10 @@ import { User } from './schemas/user.schema';
 import { CreateUserDto } from './dto/create-user.dto';
 import { Room } from '../rooms/interfaces/room.interface';
 import { USERS_PER_PAGE } from '../constants';
-import { StorageService } from '../storage/storage.service';
 
 @Injectable()
 export class UsersService {
-  constructor(
-    @InjectModel(User.name) private userModel: Model<User>,
-    private storageService: StorageService,
-  ) {}
+  constructor(@InjectModel(User.name) private userModel: Model<User>) {}
 
   async create(createUserDto: CreateUserDto) {
     const createdUser = await this.userModel.create(createUserDto);
@@ -46,13 +42,17 @@ export class UsersService {
   async findUsers(userId: User['userId'], query: string, page: number) {
     const searchCriteria = {
       name: { $regex: new RegExp(query, 'i') },
-      externalId: { $ne: userId },
+      userId: { $ne: userId },
     };
-    const match = await this.userModel.find(searchCriteria, null, {
-      skip: page * USERS_PER_PAGE,
-      USERS_PER_PAGE,
-    });
-    const matchCount = await this.userModel.countDocuments(searchCriteria);
-    return [match, matchCount] as const;
+    const foundUsers = await this.userModel.find(
+      searchCriteria,
+      'userId name',
+      {
+        skip: page * USERS_PER_PAGE,
+        limit: USERS_PER_PAGE,
+      },
+    );
+    const usersCount = await this.userModel.countDocuments(searchCriteria);
+    return [foundUsers, usersCount] as const;
   }
 }
