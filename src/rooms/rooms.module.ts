@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { MongooseModule } from '@nestjs/mongoose';
 import { UsersModule } from '../users/users.module';
+import { RoomsGateway } from './rooms.gateway';
 import { RoomsService } from './rooms.service';
 import { RoomSchema } from './schemas/room.schema';
 
@@ -9,6 +10,6 @@ import { RoomSchema } from './schemas/room.schema';
     MongooseModule.forFeature([{ name: 'Room', schema: RoomSchema }]),
     UsersModule,
   ],
-  providers: [RoomsService],
+  providers: [RoomsService, RoomsGateway],
 })
 export class RoomsModule {}
