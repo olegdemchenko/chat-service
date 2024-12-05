@@ -93,9 +93,9 @@ export class RoomsGateway {
   @SubscribeMessage(ChatEvents.createRoom)
   async handleCreateRoom(
     @ConnectedSocket() client: Socket,
-    @MessageBody('firstParticipantId') firstParticipantId: User['userId'],
-    @MessageBody('secondParticipantId') secondParticipantId: User['userId'],
+    @MessageBody() participantsIds: User['userId'][],
   ) {
+    const [firstParticipantId, secondParticipantId] = participantsIds;
     const newRoom = await this.roomsService.createNewRoom(
       firstParticipantId,
       secondParticipantId,

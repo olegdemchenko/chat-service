@@ -20,13 +20,14 @@ export class UsersService {
   }
 
   async getUserName(userId: User['userId']) {
-    return await this.userModel.findOne({ userId }, 'name');
+    const { name } = await this.userModel.findOne({ userId }, 'name -_id');
+    return name;
   }
 
   async addRoom(userId: User['userId'], roomId: Room['roomId']) {
     return await this.userModel.updateOne(
       {
-        _id: userId,
+        userId,
       },
       { $push: { rooms: roomId } },
     );
