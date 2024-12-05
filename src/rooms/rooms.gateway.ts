@@ -67,7 +67,7 @@ export class RoomsGateway {
   async handleFindRoom(@MessageBody() usersIds: User['userId'][]) {
     const existingRoom = await this.roomsService.getRoomWithUsers(usersIds);
     if (!existingRoom) {
-      return null;
+      return 'none';
     }
     return _.omit(existingRoom, ['activeParticipants']);
   }
