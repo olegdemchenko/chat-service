@@ -176,7 +176,8 @@ export class RoomsService {
   }
 
   async getActiveParticipants(roomId: Room['roomId']) {
-    return await this.roomModel.findOne({ roomId }, 'activeParticipants');
+    const res = await this.roomModel.findOne({ roomId }, 'activeParticipants');
+    return res.activeParticipants;
   }
 
   async deleteActiveParticipant(

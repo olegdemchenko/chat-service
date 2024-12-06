@@ -75,7 +75,7 @@ export class RoomsGateway {
     await client.join(getRoomName(roomId));
     this.handleSendMessage({
       roomId,
-      text: `User ${userName} joined the conversation`,
+      text: `User "${userName}" joined the conversation`,
       author: 'system',
     });
   }
@@ -150,15 +150,13 @@ export class RoomsGateway {
     const activeParticipants = await this.roomsService.getActiveParticipants(
       roomId,
     );
-
-    //TODO test and fix the condition below
-    if (activeParticipants.activeParticipants.length === 1) {
+    if (activeParticipants.length === 1) {
       await this.roomsService.deleteRoom(roomId);
     } else {
       await this.roomsService.deleteActiveParticipant(roomId, userId);
       this.handleSendMessage({
         roomId,
-        text: `User ${userName} left the conversation`,
+        text: `User "${userName}" left the conversation`,
         author: 'system',
       });
     }
