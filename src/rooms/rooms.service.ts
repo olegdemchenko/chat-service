@@ -200,7 +200,7 @@ export class RoomsService {
       text,
       author,
       createdAt: new Date(),
-      updateAt: new Date(),
+      updatedAt: new Date(),
       readBy: [author],
     };
     await this.roomModel.updateOne(

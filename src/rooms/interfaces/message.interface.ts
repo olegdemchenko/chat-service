@@ -5,6 +5,6 @@ export interface Message {
   text: string;
   author: User['userId'];
   createdAt: Date;
-  updateAt: Date;
+  updatedAt: Date;
   readBy: User['userId'][];
 }
