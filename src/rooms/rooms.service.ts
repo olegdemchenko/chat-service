@@ -2,20 +2,21 @@ import { Model } from 'mongoose';
 import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { v4 as uuidv4 } from 'uuid';
-import _ from 'lodash';
+import * as _ from 'lodash';
 import { Room } from './interfaces/room.interface';
 import { User } from '../users/schemas/user.schema';
 import { MESSAGES_PER_PAGE } from '../constants';
 import { NewMessageDto } from './dto/new-message.dto';
 import { Message } from './interfaces/message.interface';
 import { UpdateMessageDto } from './dto/update-message.dto';
+import { RoomDocument } from './schemas/room.schema';
 
 @Injectable()
 export class RoomsService {
   constructor(@InjectModel('Room') private roomModel: Model<Room>) {}
 
   async getAllUserCommunications(userId: User['userId']) {
-    return await this.roomModel.aggregate([
+    const res = await this.roomModel.aggregate([
       {
         $match: {
           activeParticipants: userId,
@@ -85,6 +86,15 @@ export class RoomsService {
         },
       },
     ]);
+    return res.map((room: RoomDocument) => {
+      return {
+        ..._.omit(room, ['_id']),
+        participants: room.participants.map(({ userId, name }) => ({
+          userId,
+          name,
+        })),
+      };
+    });
   }
 
   async getUserRoomsIds(userId: User['userId']) {

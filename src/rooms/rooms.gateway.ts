@@ -39,8 +39,21 @@ export class RoomsGateway {
   }
 
   @SubscribeMessage(ChatEvents.getUserRooms)
-  async handleGetUserRooms(@MessageBody() userId: User['userId']) {
-    return await this.roomsService.getAllUserCommunications(userId);
+  async handleGetUserRooms(@ConnectedSocket() client: Socket) {
+    const userId = await this.usersProvider.getUserId(client.id);
+    const rooms = await this.roomsService.getAllUserCommunications(userId);
+    const roomsWithUsersStatuses = await Promise.all(
+      rooms.map(async (room) => ({
+        ...room,
+        participants: await Promise.all(
+          room.participants.map(async (participant) => ({
+            ...participant,
+            isOnline: await this.usersProvider.isUserOnline(participant.userId),
+          })),
+        ),
+      })),
+    );
+    return roomsWithUsersStatuses;
   }
 
   @SubscribeMessage(ChatEvents.joinRooms)
@@ -181,7 +194,7 @@ export class RoomsGateway {
     const newMessage = await this.roomsService.addNewMessage(newMessageDto);
     this.server
       .to(getRoomName(newMessageDto.roomId))
-      .emit(ChatEvents.newMessage, newMessage);
+      .emit(ChatEvents.newMessage, newMessageDto.roomId, newMessage);
   }
 
   @SubscribeMessage(ChatEvents.readMessages)
