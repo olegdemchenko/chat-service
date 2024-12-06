@@ -17,6 +17,7 @@ import { NewMessageDto } from './dto/new-message.dto';
 import { UpdateMessageDto } from './dto/update-message.dto';
 import { Message } from './interfaces/message.interface';
 import { UsersProvider } from 'src/users/users.provider';
+import { RoomsProvider } from './rooms.provider';
 
 @WebSocketGateway(5000, {
   cors: {
@@ -31,12 +32,8 @@ export class RoomsGateway {
     private usersService: UsersService,
     private usersProvider: UsersProvider,
     private roomsService: RoomsService,
+    private roomsProvider: RoomsProvider,
   ) {}
-
-  async getRoomsNames(userId: Socket['id']) {
-    const userRoomsIds = await this.roomsService.getUserRoomsIds(userId);
-    return userRoomsIds.map(({ roomId }) => getRoomName(roomId));
-  }
 
   @SubscribeMessage(ChatEvents.getUserRooms)
   async handleGetUserRooms(@ConnectedSocket() client: Socket) {
@@ -54,26 +51,6 @@ export class RoomsGateway {
       })),
     );
     return roomsWithUsersStatuses;
-  }
-
-  @SubscribeMessage(ChatEvents.joinRooms)
-  async handleJoinRooms(
-    @ConnectedSocket() client: Socket,
-    @MessageBody() userId: User['userId'],
-  ) {
-    const roomsNames = await this.getRoomsNames(userId);
-    await client.join(roomsNames);
-    client.to(roomsNames).emit(ChatEvents.userJoin, userId);
-  }
-
-  @SubscribeMessage(ChatEvents.leaveRooms)
-  async handleLeaveRooms(
-    @ConnectedSocket() client: Socket,
-    @MessageBody() userId: User['userId'],
-  ) {
-    const roomsNames = await this.getRoomsNames(userId);
-    client.to(roomsNames).emit(ChatEvents.userLeave, userId);
-    roomsNames.forEach((room) => client.leave(room));
   }
 
   @SubscribeMessage(ChatEvents.findRoom)

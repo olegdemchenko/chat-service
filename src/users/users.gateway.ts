@@ -11,6 +11,7 @@ import {
   OnGatewayDisconnect,
 } from '@nestjs/websockets/interfaces';
 import { SubscribeMessage } from '@nestjs/websockets/decorators';
+import { RoomsProvider } from '../rooms/rooms.provider';
 import { ChatEvents } from '../constants';
 import { UsersService } from './users.service';
 import { User } from './schemas/user.schema';
@@ -28,6 +29,7 @@ export class UsersGateway implements OnGatewayConnection, OnGatewayDisconnect {
   constructor(
     private usersService: UsersService,
     private usersProvider: UsersProvider,
+    private roomsProvider: RoomsProvider,
   ) {}
 
   async handleConnection(client: Socket) {
@@ -44,6 +46,11 @@ export class UsersGateway implements OnGatewayConnection, OnGatewayDisconnect {
         });
       }
       await this.usersProvider.saveUserConnection(user.userId, client.id);
+      const userRoomsNames = await this.roomsProvider.getUserRoomsNames(
+        user.userId,
+      );
+      client.join(userRoomsNames);
+      client.to(userRoomsNames).emit(ChatEvents.userOnline, user.userId);
     } catch (e) {
       if (e instanceof BadRequestException) {
         client.emit(ChatEvents.customError, new Error('User token is invalid'));
@@ -86,6 +93,10 @@ export class UsersGateway implements OnGatewayConnection, OnGatewayDisconnect {
   }
 
   async handleDisconnect(client: Socket) {
+    const userId = await this.usersProvider.getUserId(client.id);
+    const roomsNames = await this.roomsProvider.getUserRoomsNames(userId);
+    client.to(roomsNames).emit(ChatEvents.userOffline, userId);
+    roomsNames.forEach((room) => client.leave(room));
     await this.usersProvider.removeUserConnection(client.id);
   }
 }
