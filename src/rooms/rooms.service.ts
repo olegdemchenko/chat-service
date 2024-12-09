@@ -1,15 +1,12 @@
 import { Model } from 'mongoose';
 import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import { v4 as uuidv4 } from 'uuid';
 import * as _ from 'lodash';
 import { Room } from './interfaces/room.interface';
 import { User } from '../users/schemas/user.schema';
 import { MESSAGES_PER_PAGE } from '../constants';
-import { NewMessageDto } from './dto/new-message.dto';
-import { Message } from './interfaces/message.interface';
-import { UpdateMessageDto } from './dto/update-message.dto';
 import { RoomDocument } from './schemas/room.schema';
+import { Message } from 'src/messages/interfaces/message.interface';
 
 @Injectable()
 export class RoomsService {
@@ -28,6 +25,14 @@ export class RoomsService {
           localField: 'participants',
           foreignField: 'userId',
           as: 'participants',
+        },
+      },
+      {
+        $lookup: {
+          from: 'messages',
+          localField: 'messages',
+          foreignField: 'messageId',
+          as: 'messages',
         },
       },
       {
@@ -141,6 +146,30 @@ export class RoomsService {
     return newRoom;
   }
 
+  async saveMessageToRoom(
+    roomId: Room['roomId'],
+    newMessageId: Message['messageId'],
+  ) {
+    return await this.roomModel.updateOne(
+      { roomId },
+      {
+        $push: {
+          messages: newMessageId,
+        },
+      },
+    );
+  }
+
+  async deleteMessageFromRoom(
+    roomId: Room['roomId'],
+    messageId: Message['messageId'],
+  ) {
+    return await this.roomModel.updateOne(
+      { roomId },
+      { $pull: { messages: messageId } },
+    );
+  }
+
   async loadMoreMessages(roomId: Room['roomId'], skip: number) {
     return await this.roomModel.aggregate([
       {
@@ -152,7 +181,7 @@ export class RoomsService {
         $lookup: {
           from: 'messages',
           localField: 'messages',
-          foreignField: '_id',
+          foreignField: 'messageId',
           as: 'messages',
         },
       },
@@ -194,67 +223,67 @@ export class RoomsService {
     return await this.roomModel.deleteOne({ roomId });
   }
 
-  async addNewMessage({ roomId, text, author }: NewMessageDto) {
-    const newMessage: Message = {
-      messageId: uuidv4(),
-      text,
-      author,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-      readBy: [author],
-    };
-    await this.roomModel.updateOne(
-      { roomId },
-      {
-        $push: {
-          messages: newMessage,
-        },
-      },
-    );
-    return newMessage;
-  }
+  // async addNewMessage({ roomId, text, author }: NewMessageDto) {
+  //   const newMessage: Message = {
+  //     messageId: uuidv4(),
+  //     text,
+  //     author,
+  //     createdAt: new Date(),
+  //     updatedAt: new Date(),
+  //     readBy: [author],
+  //   };
+  //   await this.roomModel.updateOne(
+  //     { roomId },
+  //     {
+  //       $push: {
+  //         messages: newMessage,
+  //       },
+  //     },
+  //   );
+  //   return newMessage;
+  // }
 
-  async updateMessage({ roomId, messageId, newText }: UpdateMessageDto) {
-    return await this.roomModel.updateOne(
-      {
-        roomId,
-      },
-      {
-        $set: {
-          'messages.$[element].text': newText,
-          'messages.$[element].updatedAt': new Date(),
-        },
-      },
-      { arrayFilters: [{ element: { messageId } }] },
-    );
-  }
+  // async updateMessage({ roomId, messageId, newText }: UpdateMessageDto) {
+  //   const res = await this.roomModel.findOneAndUpdate(
+  //     {
+  //       roomId,
+  //     },
+  //     {
+  //       $set: {
+  //         'messages.$[element].text': newText,
+  //         'messages.$[element].updatedAt': new Date(),
+  //       },
+  //     },
+  //     { arrayFilters: [{ element: { messageId } }] },
+  //   );
+  // }
 
-  async deleteMessage(roomId: Room['roomId'], messageId: Message['messageId']) {
-    return await this.roomModel.updateOne(
-      { roomId },
-      {
-        $pull: {
-          messages: { messageId },
-        },
-      },
-    );
-  }
+  // async deleteMessage(roomId: Room['roomId'], messageId: Message['messageId']) {
+  //   return await this.roomModel.updateOne(
+  //     { roomId },
+  //     {
+  //       $pull: {
+  //         messages: { messageId },
+  //       },
+  //     },
+  //   );
+  // }
 
-  async readMessages(
-    messagesIds: Message['messageId'][],
-    userId: User['userId'],
-    roomId: Room['roomId'],
-  ) {
-    return await this.roomModel.updateOne(
-      { roomId },
-      {
-        $push: {
-          'messages.$[element].readBy': userId,
-        },
-      },
-      {
-        arrayFilters: [{ element: { $in: [messagesIds] } }],
-      },
-    );
-  }
+  // async readMessages(
+  //   messagesIds: Message['messageId'][],
+  //   userId: User['userId'],
+  //   roomId: Room['roomId'],
+  // ) {
+  //   return await this.roomModel.updateOne(
+  //     { roomId },
+  //     {
+  //       $push: {
+  //         'messages.$[element].readBy': userId,
+  //       },
+  //     },
+  //     {
+  //       arrayFilters: [{ element: { $in: [messagesIds] } }],
+  //     },
+  //   );
+  // }
 }

@@ -1,6 +1,6 @@
 import { User } from 'src/users/schemas/user.schema';
-import { Message } from '../../messages/interfaces/message.interface';
-import { Room } from '../interfaces/room.interface';
+import { Message } from '../interfaces/message.interface';
+import { Room } from '../../rooms/schemas/room.schema';
 
 export class NewMessageDto {
   readonly roomId: Room['roomId'];

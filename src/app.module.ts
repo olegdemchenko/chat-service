@@ -4,6 +4,7 @@ import { MongooseModule } from '@nestjs/mongoose';
 import { RoomsModule } from './rooms/rooms.module';
 import { StorageModule } from './storage/storage.module';
 import { UsersModule } from './users/users.module';
+import { MessagesModule } from './messages/messages.module';
 @Module({
   imports: [
     ConfigModule.forRoot(),
@@ -17,6 +18,7 @@ import { UsersModule } from './users/users.module';
     StorageModule,
     UsersModule,
     RoomsModule,
+    MessagesModule,
   ],
   controllers: [],
   providers: [],

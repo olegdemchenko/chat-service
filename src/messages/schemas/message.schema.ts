@@ -1,28 +1,29 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { HydratedDocument } from 'mongoose';
 import { v4 as uuidv4 } from 'uuid';
-import { Message } from 'src/messages/schemas/message.schema';
 import { User } from '../../users/schemas/user.schema';
 
-export type RoomDocument = HydratedDocument<Room>;
+export type MessageDocument = HydratedDocument<Message>;
 
-@Schema()
-export class Room {
+@Schema({ timestamps: true })
+export class Message {
   @Prop({
     required: true,
     unique: true,
     default: uuidv4,
   })
-  roomId: string;
+  messageId: string;
+
+  @Prop({
+    required: true,
+  })
+  text: string;
 
   @Prop([String])
-  messages: Message[];
+  author: User['userId'][];
 
   @Prop([String])
-  participants: User[];
-
-  @Prop([String])
-  activeParticipants: User[];
+  readBy: User['userId'][];
 }
 
-export const RoomSchema = SchemaFactory.createForClass(Room);
+export const MessageSchema = SchemaFactory.createForClass(Message);

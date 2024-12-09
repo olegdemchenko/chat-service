@@ -15,9 +15,9 @@ import { Room } from './interfaces/room.interface';
 import { UsersService } from '../users/users.service';
 import { NewMessageDto } from './dto/new-message.dto';
 import { UpdateMessageDto } from './dto/update-message.dto';
-import { Message } from './interfaces/message.interface';
+import { Message } from '../messages/interfaces/message.interface';
 import { UsersProvider } from 'src/users/users.provider';
-import { RoomsProvider } from './rooms.provider';
+import { MessagesService } from 'src/messages/messages.service';
 
 @WebSocketGateway(5000, {
   cors: {
@@ -32,7 +32,7 @@ export class RoomsGateway {
     private usersService: UsersService,
     private usersProvider: UsersProvider,
     private roomsService: RoomsService,
-    private roomsProvider: RoomsProvider,
+    private messagesService: MessagesService,
   ) {}
 
   @SubscribeMessage(ChatEvents.getUserRooms)
@@ -73,11 +73,14 @@ export class RoomsGateway {
     await this.usersService.addRoom(userId, roomId);
 
     await client.join(getRoomName(roomId));
-    this.handleSendMessage({
+    const notification = await this.messagesService.addNewMessage({
       roomId,
       text: `User "${userName}" joined the conversation`,
       author: 'system',
     });
+    this.server
+      .to(getRoomName(roomId))
+      .emit(ChatEvents.newMessage, roomId, notification);
   }
 
   @SubscribeMessage(ChatEvents.createRoom)
@@ -154,51 +157,58 @@ export class RoomsGateway {
       await this.roomsService.deleteRoom(roomId);
     } else {
       await this.roomsService.deleteActiveParticipant(roomId, userId);
-      this.handleSendMessage({
+      const notification = await this.messagesService.addNewMessage({
         roomId,
         text: `User "${userName}" left the conversation`,
         author: 'system',
       });
+      this.server
+        .to(getRoomName(roomId))
+        .emit(ChatEvents.newMessage, roomId, notification);
     }
     await client.leave(getRoomName(roomId));
     return true;
   }
 
-  @SubscribeMessage(ChatEvents.newMessage)
-  async handleSendMessage(@MessageBody() newMessageDto: NewMessageDto) {
-    const newMessage = await this.roomsService.addNewMessage(newMessageDto);
-    this.server
-      .to(getRoomName(newMessageDto.roomId))
-      .emit(ChatEvents.newMessage, newMessageDto.roomId, newMessage);
-  }
+  // @SubscribeMessage(ChatEvents.newMessage)
+  // async handleSendMessage(
+  //   @ConnectedSocket() client: Socket,
+  //   @MessageBody() newMessageDto: NewMessageDto,
+  // ) {
+  //   const newMessage = await this.roomsService.addNewMessage(newMessageDto);
+  //   client
+  //     .to(getRoomName(newMessageDto.roomId))
+  //     .emit(ChatEvents.newMessage, newMessageDto.roomId, newMessage);
+  //   return newMessage;
+  // }
 
-  @SubscribeMessage(ChatEvents.readMessages)
-  async handleReadMessages(
-    @MessageBody('messagesIds') messagesIds: Message['messageId'][],
-    @MessageBody('userId') userId: User['userId'],
-    @MessageBody('roomId') roomId: Room['roomId'],
-  ) {
-    await this.roomsService.readMessages(messagesIds, userId, roomId);
-  }
+  // @SubscribeMessage(ChatEvents.readMessages)
+  // async handleReadMessages(
+  //   @MessageBody('messagesIds') messagesIds: Message['messageId'][],
+  //   @MessageBody('userId') userId: User['userId'],
+  //   @MessageBody('roomId') roomId: Room['roomId'],
+  // ) {
+  //   await this.roomsService.readMessages(messagesIds, userId, roomId);
+  // }
 
-  @SubscribeMessage(ChatEvents.updateMessage)
-  async handleUpdateMessage(@MessageBody() updateMessageDto: UpdateMessageDto) {
-    const updatedMessage = await this.roomsService.updateMessage(
-      updateMessageDto,
-    );
-    this.server
-      .to(getRoomName(updateMessageDto.roomId))
-      .emit(ChatEvents.updateMessage, updateMessageDto.roomId, updatedMessage);
-  }
+  // @SubscribeMessage(ChatEvents.updateMessage)
+  // async handleUpdateMessage(@MessageBody() updateMessageDto: UpdateMessageDto) {
+  //   const updatedMessage = await this.roomsService.updateMessage(
+  //     updateMessageDto,
+  //   );
+  //   this.server
+  //     .to(getRoomName(updateMessageDto.roomId))
+  //     .emit(ChatEvents.updateMessage, updateMessageDto.roomId, updatedMessage);
+  // }
 
-  @SubscribeMessage(ChatEvents.deleteMessage)
-  async handleDeleteMessage(
-    @MessageBody('roomId') roomId: Room['roomId'],
-    @MessageBody('messageId') messageId: Message['messageId'],
-  ) {
-    await this.roomsService.deleteMessage(roomId, messageId);
-    this.server
-      .to(getRoomName(roomId))
-      .emit(ChatEvents.deleteMessage, roomId, messageId);
-  }
+  // @SubscribeMessage(ChatEvents.deleteMessage)
+  // async handleDeleteMessage(
+  //   @MessageBody('roomId') roomId: Room['roomId'],
+  //   @MessageBody('messageId') messageId: Message['messageId'],
+  // ) {
+  //   await this.roomsService.deleteMessage(roomId, messageId);
+  //   this.server
+  //     .to(getRoomName(roomId))
+  //     .emit(ChatEvents.deleteMessage, roomId, messageId);
+  // }
 }
