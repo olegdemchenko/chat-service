@@ -59,7 +59,7 @@ export class MessagesService {
   ) {
     return await this.messageModel.updateMany(
       { messageId: { $in: messagesIds } },
-      { readBy: { $push: userId } },
+      { $push: { readBy: userId } },
     );
   }
 }
