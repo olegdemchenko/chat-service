@@ -13,9 +13,6 @@ import { ChatEvents } from '../constants';
 import _ from 'lodash';
 import { Room } from './interfaces/room.interface';
 import { UsersService } from '../users/users.service';
-import { NewMessageDto } from './dto/new-message.dto';
-import { UpdateMessageDto } from './dto/update-message.dto';
-import { Message } from '../messages/interfaces/message.interface';
 import { UsersProvider } from 'src/users/users.provider';
 import { MessagesService } from 'src/messages/messages.service';
 
@@ -169,46 +166,4 @@ export class RoomsGateway {
     await client.leave(getRoomName(roomId));
     return true;
   }
-
-  // @SubscribeMessage(ChatEvents.newMessage)
-  // async handleSendMessage(
-  //   @ConnectedSocket() client: Socket,
-  //   @MessageBody() newMessageDto: NewMessageDto,
-  // ) {
-  //   const newMessage = await this.roomsService.addNewMessage(newMessageDto);
-  //   client
-  //     .to(getRoomName(newMessageDto.roomId))
-  //     .emit(ChatEvents.newMessage, newMessageDto.roomId, newMessage);
-  //   return newMessage;
-  // }
-
-  // @SubscribeMessage(ChatEvents.readMessages)
-  // async handleReadMessages(
-  //   @MessageBody('messagesIds') messagesIds: Message['messageId'][],
-  //   @MessageBody('userId') userId: User['userId'],
-  //   @MessageBody('roomId') roomId: Room['roomId'],
-  // ) {
-  //   await this.roomsService.readMessages(messagesIds, userId, roomId);
-  // }
-
-  // @SubscribeMessage(ChatEvents.updateMessage)
-  // async handleUpdateMessage(@MessageBody() updateMessageDto: UpdateMessageDto) {
-  //   const updatedMessage = await this.roomsService.updateMessage(
-  //     updateMessageDto,
-  //   );
-  //   this.server
-  //     .to(getRoomName(updateMessageDto.roomId))
-  //     .emit(ChatEvents.updateMessage, updateMessageDto.roomId, updatedMessage);
-  // }
-
-  // @SubscribeMessage(ChatEvents.deleteMessage)
-  // async handleDeleteMessage(
-  //   @MessageBody('roomId') roomId: Room['roomId'],
-  //   @MessageBody('messageId') messageId: Message['messageId'],
-  // ) {
-  //   await this.roomsService.deleteMessage(roomId, messageId);
-  //   this.server
-  //     .to(getRoomName(roomId))
-  //     .emit(ChatEvents.deleteMessage, roomId, messageId);
-  // }
 }
