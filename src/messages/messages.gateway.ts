@@ -36,7 +36,6 @@ export class MessagesGateway {
     @MessageBody() newMessageDto: NewMessageDto,
   ) {
     const newMessage = await this.messagesService.addNewMessage(newMessageDto);
-    console.log('new message', newMessage);
     client
       .to(getRoomName(newMessageDto.roomId))
       .emit(ChatEvents.newMessage, newMessageDto.roomId, newMessage);

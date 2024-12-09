@@ -93,9 +93,6 @@ export class RoomsGateway {
     await this.usersService.addRoom(firstParticipantId, newRoom.roomId);
     await this.usersService.addRoom(secondParticipantId, newRoom.roomId);
     await client.join(getRoomName(newRoom.roomId));
-    const isSecondParticipantOnline = await this.usersProvider.isUserOnline(
-      secondParticipantId,
-    );
     const defaultRoomPayload = {
       roomId: newRoom.roomId,
       participants: [],
@@ -103,6 +100,9 @@ export class RoomsGateway {
       messagesCount: 0,
       unreadMessagesCount: 0,
     };
+    const isSecondParticipantOnline = await this.usersProvider.isUserOnline(
+      secondParticipantId,
+    );
     if (isSecondParticipantOnline) {
       const secondParticipantSocketId =
         await this.usersProvider.getUserSocketId(secondParticipantId);
@@ -115,7 +115,11 @@ export class RoomsGateway {
       secondParticipantSocket.emit(ChatEvents.newRoom, {
         ...defaultRoomPayload,
         participants: [
-          { userId: firstParticipantId, name: firstParticipantName },
+          {
+            userId: firstParticipantId,
+            name: firstParticipantName,
+            isOnline: true,
+          },
         ],
       });
     }
@@ -125,7 +129,11 @@ export class RoomsGateway {
     return {
       ...defaultRoomPayload,
       participants: [
-        { userId: secondParticipantId, name: secondParticipantName },
+        {
+          userId: secondParticipantId,
+          name: secondParticipantName,
+          isOnline: isSecondParticipantOnline,
+        },
       ],
     };
   }
