@@ -19,8 +19,8 @@ export class Message {
   })
   text: string;
 
-  @Prop([String])
-  author: User['userId'][];
+  @Prop({ type: String })
+  author: User['userId'];
 
   @Prop([String])
   readBy: User['userId'][];
