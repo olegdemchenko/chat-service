@@ -126,6 +126,7 @@ export class RoomsGateway {
       const firstParticipantName = await this.usersService.getUserName(
         firstParticipantId,
       );
+      secondParticipantSocket.join(getRoomName(newRoom.roomId));
       secondParticipantSocket.emit(ChatEvents.newRoom, {
         ...defaultRoomPayload,
         participants: [
