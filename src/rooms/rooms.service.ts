@@ -7,6 +7,7 @@ import { User } from '../users/schemas/user.schema';
 import { MESSAGES_PER_PAGE } from '../constants';
 import { RoomDocument } from './schemas/room.schema';
 import { Message } from 'src/messages/interfaces/message.interface';
+import { MessageDocument } from 'src/messages/schemas/message.schema';
 
 @Injectable()
 export class RoomsService {
@@ -193,7 +194,7 @@ export class RoomsService {
   }
 
   async loadMoreMessages(roomId: Room['roomId'], skip: number) {
-    return await this.roomModel.aggregate([
+    const res = await this.roomModel.aggregate([
       {
         $match: {
           roomId,
@@ -224,6 +225,17 @@ export class RoomsService {
         },
       },
     ]);
+    const messages = res[0].messages as MessageDocument[];
+    return messages.map((message) =>
+      _.pick(message, [
+        'messageId',
+        'author',
+        'text',
+        'readBy',
+        'createdAt',
+        'updatedAt',
+      ]),
+    );
   }
 
   async getActiveParticipants(roomId: Room['roomId']) {
