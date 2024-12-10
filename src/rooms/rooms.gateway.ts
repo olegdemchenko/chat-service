@@ -51,12 +51,25 @@ export class RoomsGateway {
   }
 
   @SubscribeMessage(ChatEvents.findRoom)
-  async handleFindRoom(@MessageBody() usersIds: User['userId'][]) {
-    const existingRoom = await this.roomsService.getRoomWithUsers(usersIds);
+  async handleFindRoom(
+    @MessageBody('participantsIds') participantsIds: User['userId'][],
+    @MessageBody('userId') userId: User['userId'],
+  ) {
+    const existingRoom = await this.roomsService.getExistingRoom(
+      participantsIds,
+      userId,
+    );
     if (!existingRoom) {
       return 'none';
     }
-    return _.omit(existingRoom, ['activeParticipants']);
+    const participantsWithStatuses = await Promise.all(
+      existingRoom.participants.map(async ({ userId, name }) => ({
+        userId,
+        name,
+        isOnline: await this.usersProvider.isUserOnline(userId),
+      })),
+    );
+    return { ...existingRoom, participants: participantsWithStatuses };
   }
 
   @SubscribeMessage(ChatEvents.connectToRoom)
@@ -75,9 +88,10 @@ export class RoomsGateway {
       text: `User "${userName}" joined the conversation`,
       author: 'system',
     });
-    this.server
+    client
       .to(getRoomName(roomId))
       .emit(ChatEvents.newMessage, roomId, notification);
+    return true;
   }
 
   @SubscribeMessage(ChatEvents.createRoom)

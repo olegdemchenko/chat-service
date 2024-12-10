@@ -1,4 +1,4 @@
-import { Model } from 'mongoose';
+import { Model, PipelineStage } from 'mongoose';
 import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import * as _ from 'lodash';
@@ -12,13 +12,10 @@ import { Message } from 'src/messages/interfaces/message.interface';
 export class RoomsService {
   constructor(@InjectModel('Room') private roomModel: Model<Room>) {}
 
-  async getAllUserCommunications(userId: User['userId']) {
+  async getRooms(searchCryteria: PipelineStage.Match, userId: User['userId']) {
     const res = await this.roomModel.aggregate([
-      {
-        $match: {
-          activeParticipants: userId,
-        },
-      },
+      searchCryteria,
+
       {
         $lookup: {
           from: 'users',
@@ -102,6 +99,17 @@ export class RoomsService {
     });
   }
 
+  async getAllUserCommunications(userId: User['userId']) {
+    return await this.getRooms(
+      {
+        $match: {
+          activeParticipants: userId,
+        },
+      },
+      userId,
+    );
+  }
+
   async getUserRoomsIds(userId: User['userId']) {
     return await this.roomModel.aggregate([
       {
@@ -117,10 +125,24 @@ export class RoomsService {
     ]);
   }
 
-  async getRoomWithUsers(usersIds: User['userId'][]) {
-    return await this.roomModel.findOne({
-      participants: { $all: usersIds },
-    });
+  async getExistingRoom(
+    participantsIds: User['userId'][],
+    userId: User['userId'],
+  ) {
+    const foundRooms = await this.getRooms(
+      {
+        $match: {
+          participants: {
+            $all: participantsIds,
+          },
+        },
+      },
+      userId,
+    );
+    if (foundRooms.length === 0) {
+      return null;
+    }
+    return foundRooms[0];
   }
 
   async addActiveParticipant(roomId: Room['roomId'], userId: User['userId']) {
@@ -222,68 +244,4 @@ export class RoomsService {
   async deleteRoom(roomId: Room['roomId']) {
     return await this.roomModel.deleteOne({ roomId });
   }
-
-  // async addNewMessage({ roomId, text, author }: NewMessageDto) {
-  //   const newMessage: Message = {
-  //     messageId: uuidv4(),
-  //     text,
-  //     author,
-  //     createdAt: new Date(),
-  //     updatedAt: new Date(),
-  //     readBy: [author],
-  //   };
-  //   await this.roomModel.updateOne(
-  //     { roomId },
-  //     {
-  //       $push: {
-  //         messages: newMessage,
-  //       },
-  //     },
-  //   );
-  //   return newMessage;
-  // }
-
-  // async updateMessage({ roomId, messageId, newText }: UpdateMessageDto) {
-  //   const res = await this.roomModel.findOneAndUpdate(
-  //     {
-  //       roomId,
-  //     },
-  //     {
-  //       $set: {
-  //         'messages.$[element].text': newText,
-  //         'messages.$[element].updatedAt': new Date(),
-  //       },
-  //     },
-  //     { arrayFilters: [{ element: { messageId } }] },
-  //   );
-  // }
-
-  // async deleteMessage(roomId: Room['roomId'], messageId: Message['messageId']) {
-  //   return await this.roomModel.updateOne(
-  //     { roomId },
-  //     {
-  //       $pull: {
-  //         messages: { messageId },
-  //       },
-  //     },
-  //   );
-  // }
-
-  // async readMessages(
-  //   messagesIds: Message['messageId'][],
-  //   userId: User['userId'],
-  //   roomId: Room['roomId'],
-  // ) {
-  //   return await this.roomModel.updateOne(
-  //     { roomId },
-  //     {
-  //       $push: {
-  //         'messages.$[element].readBy': userId,
-  //       },
-  //     },
-  //     {
-  //       arrayFilters: [{ element: { $in: [messagesIds] } }],
-  //     },
-  //   );
-  // }
 }
