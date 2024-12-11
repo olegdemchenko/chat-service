@@ -1,43 +1,25 @@
 module.exports = {
+  parser: '@typescript-eslint/parser',
+  parserOptions: {
+    project: 'tsconfig.json',
+    tsconfigRootDir: __dirname,
+    sourceType: 'module',
+  },
+  plugins: ['@typescript-eslint/eslint-plugin'],
+  extends: [
+    'plugin:@typescript-eslint/recommended',
+    'plugin:prettier/recommended',
+  ],
+  root: true,
   env: {
     node: true,
-    es2020: true,
+    jest: true,
   },
-  extends: [
-    "airbnb-base",
-    "airbnb-typescript/base",
-    "plugin:node/recommended",
-    "plugin:@typescript-eslint/recommended-type-checked",
-    "plugin:@typescript-eslint/stylistic-type-checked",
-    "plugin:prettier/recommended",
-  ],
-  parser: "@typescript-eslint/parser",
-  parserOptions: {
-    ecmaVersion: 2020,
-    sourceType: "module",
-    project: "./tsconfig.json",
-  },
-  settings: {
-    node: {
-      tryExtensions: [".js", ".json", ".node", ".ts"],
-    },
-  },
-  plugins: ["@typescript-eslint", "prettier"],
-  root: true,
+  ignorePatterns: ['.eslintrc.js'],
   rules: {
-    "node/no-unsupported-features/es-syntax": [
-      "error",
-      { ignores: ["modules"] },
-    ],
-    "consistent-return": ["warn"],
-    "class-methods-use-this": ["warn"],
-    "@typescript-eslint/no-unsafe-call": ["off"],
-    "@typescript-eslint/no-misused-promises": ["off"],
-    "@typescript-eslint/no-explicit-any": ["warn"],
-    "import/prefer-default-export": ["off"],
-    "no-param-reassign": ["warn"],
-    "no-underscore-dangle": ["off"],
-    "@typescript-eslint/no-floating-promises": ["warn"],
-    "@typescript-eslint/naming-convention": ["warn"]
+    '@typescript-eslint/interface-name-prefix': 'off',
+    '@typescript-eslint/explicit-function-return-type': 'off',
+    '@typescript-eslint/explicit-module-boundary-types': 'off',
+    '@typescript-eslint/no-explicit-any': 'off',
   },
 };
