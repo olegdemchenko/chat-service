@@ -15,13 +15,27 @@ export class UsersService {
     return createdUser;
   }
 
-  async findByExternalId(id: number) {
-    return this.userModel.findOne({ externalId: id }).exec();
+  async getUserById(userId: string) {
+    return this.userModel.findOne({ userId }).exec();
+  }
+
+  async getUserByName(username: string) {
+    return this.userModel.findOne({ name: username }).exec();
   }
 
   async getUserName(userId: User['userId']) {
     const { name } = await this.userModel.findOne({ userId }, 'name -_id');
     return name;
+  }
+
+  async isUsernameTaken(username: string) {
+    const user = await this.userModel.findOne({ name: username }).exec();
+    return Boolean(user);
+  }
+
+  async isEmailTaken(email: string) {
+    const user = await this.userModel.findOne({ email }).exec();
+    return Boolean(user);
   }
 
   async addRoom(userId: User['userId'], roomId: Room['roomId']) {

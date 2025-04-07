@@ -38,7 +38,7 @@ export class UsersGateway implements OnGatewayConnection, OnGatewayDisconnect {
       const userExternalInfo = await this.usersProvider.fetchUserExternalInfo(
         userToken,
       );
-      let user = await this.usersService.findByExternalId(userExternalInfo.id);
+      let user = await this.usersService.getUserById(userExternalInfo.id);
       if (!user) {
         user = await this.usersService.create({
           name: userExternalInfo.name,
