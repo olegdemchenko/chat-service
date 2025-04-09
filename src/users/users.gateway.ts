@@ -33,24 +33,12 @@ export class UsersGateway implements OnGatewayConnection, OnGatewayDisconnect {
   ) {}
 
   async handleConnection(client: Socket) {
-    const userToken = client.handshake.auth.token as string;
+    const { userId } = client.handshake.auth;
     try {
-      const userExternalInfo = await this.usersProvider.fetchUserExternalInfo(
-        userToken,
-      );
-      let user = await this.usersService.getUserById(userExternalInfo.id);
-      if (!user) {
-        user = await this.usersService.create({
-          name: userExternalInfo.name,
-          externalId: userExternalInfo.id,
-        });
-      }
-      await this.usersProvider.saveUserConnection(user.userId, client.id);
-      const userRoomsNames = await this.roomsProvider.getUserRoomsNames(
-        user.userId,
-      );
+      await this.usersProvider.saveUserConnection(userId, client.id);
+      const userRoomsNames = await this.roomsProvider.getUserRoomsNames(userId);
       client.join(userRoomsNames);
-      client.to(userRoomsNames).emit(ChatEvents.userOnline, user.userId);
+      client.to(userRoomsNames).emit(ChatEvents.userOnline, userId);
     } catch (e) {
       if (e instanceof BadRequestException) {
         client.emit(ChatEvents.customError, new Error('User token is invalid'));
@@ -93,7 +81,7 @@ export class UsersGateway implements OnGatewayConnection, OnGatewayDisconnect {
   }
 
   async handleDisconnect(client: Socket) {
-    const userId = await this.usersProvider.getUserId(client.id);
+    const { userId } = client.handshake.auth;
     const roomsNames = await this.roomsProvider.getUserRoomsNames(userId);
     client.to(roomsNames).emit(ChatEvents.userOffline, userId);
     roomsNames.forEach((room) => client.leave(room));

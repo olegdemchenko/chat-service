@@ -1,41 +1,11 @@
-import { Injectable, BadRequestException } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
-import axios, { AxiosError } from 'axios';
+import { Injectable } from '@nestjs/common';
 import { User } from './schemas/user.schema';
 import { StorageService } from '../storage/storage.service';
 import { Socket } from 'socket.io';
 
-type ExternalUserInfo = {
-  id: number;
-  name: string;
-  email: string | null;
-};
-
 @Injectable()
 export class UsersProvider {
-  constructor(
-    private storageService: StorageService,
-    private configService: ConfigService,
-  ) {}
-
-  async fetchUserExternalInfo(userToken: string) {
-    try {
-      const { data: userInfo } = await axios.get<ExternalUserInfo>(
-        this.configService.get<string>('AUTH_SERVICE_URL'),
-        {
-          headers: {
-            Authorization: `Bearer ${userToken as string}`,
-          },
-        },
-      );
-      return userInfo;
-    } catch (e) {
-      if (e instanceof AxiosError && e.response?.status === 400) {
-        throw new BadRequestException();
-      }
-      throw e;
-    }
-  }
+  constructor(private storageService: StorageService) {}
 
   async saveUserConnection(userId: User['userId'], clientId: Socket['id']) {
     await this.storageService.add(clientId, userId);
