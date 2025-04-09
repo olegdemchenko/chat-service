@@ -9,8 +9,8 @@ export const storageProvider: Provider = {
   provide: 'STORAGE',
   useFactory: (configService: ConfigService): Storage => {
     return new Redis(
-      Number(configService.get<string>('REDIS_PORT')),
-      configService.get<string>('REDIS_HOST'),
+      Number(configService.get<string>('STORAGE_PORT')),
+      configService.get<string>('STORAGE_HOST'),
     );
   },
 };
