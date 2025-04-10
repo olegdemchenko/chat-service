@@ -16,7 +16,7 @@ import { UsersService } from '../users/users.service';
 import { UsersProvider } from 'src/users/users.provider';
 import { MessagesService } from 'src/messages/messages.service';
 
-@WebSocketGateway(5000, {
+@WebSocketGateway(Number(process.env.WS_PORT), {
   cors: {
     origin: '*',
   },
