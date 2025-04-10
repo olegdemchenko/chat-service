@@ -5,6 +5,7 @@ import { RoomsModule } from './rooms/rooms.module';
 import { StorageModule } from './storage/storage.module';
 import { UsersModule } from './users/users.module';
 import { MessagesModule } from './messages/messages.module';
+import { AuthModule } from './auth/auth.module';
 @Module({
   imports: [
     ConfigModule.forRoot(),
@@ -16,6 +17,7 @@ import { MessagesModule } from './messages/messages.module';
       inject: [ConfigService],
     }),
     StorageModule,
+    AuthModule,
     UsersModule,
     RoomsModule,
     MessagesModule,
