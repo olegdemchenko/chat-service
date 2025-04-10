@@ -1,4 +1,5 @@
 import { Controller, Request, Post, Get, UseGuards } from '@nestjs/common';
+import * as _ from 'lodash';
 import { AuthService } from './auth.service';
 import { SignUpGuard } from './guards/signup.guard';
 import { LocalAuthGuard } from './guards/local-auth.guard';
@@ -27,7 +28,7 @@ export class AuthController {
   @UseGuards(JwtAuthGuard)
   @Get('profile')
   async getProfile(@Request() req) {
-    const user = await this.usersService.getUserByName(req.user.name);
-    return user;
+    const user = await this.usersService.getUserById(req.user.userId);
+    return _.pick(user, ['name', 'email', 'rooms', 'userId']);
   }
 }
