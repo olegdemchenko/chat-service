@@ -10,7 +10,6 @@ import { RoomsService } from './rooms.service';
 import { User } from '../users/schemas/user.schema';
 import { getRoomName } from '../utils';
 import { ChatEvents } from '../constants';
-import _ from 'lodash';
 import { Room } from './interfaces/room.interface';
 import { UsersService } from '../users/users.service';
 import { UsersProvider } from 'src/users/users.provider';
