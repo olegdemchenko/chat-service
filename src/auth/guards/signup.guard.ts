@@ -7,6 +7,7 @@ import {
 import { UsersService } from 'src/users/users.service';
 import { AuthService } from '../auth.service';
 import { CreateUserDto } from 'src/users/dto/create-user.dto';
+import { hashPassword } from 'src/utils';
 
 @Injectable()
 export class SignUpGuard implements CanActivate {
@@ -17,7 +18,7 @@ export class SignUpGuard implements CanActivate {
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const request = context.switchToHttp().getRequest();
-    const newUserDto = request.data as CreateUserDto;
+    const newUserDto = request.body as CreateUserDto;
     const areUserCredentialsValid =
       await this.authService.validateNewUserCredentials(
         newUserDto.name,
@@ -26,7 +27,11 @@ export class SignUpGuard implements CanActivate {
     if (!areUserCredentialsValid) {
       throw new BadRequestException();
     }
-    const user = await this.usersService.create(newUserDto);
+    const hashedPassword = await hashPassword(newUserDto.password);
+    const user = await this.usersService.create({
+      ...newUserDto,
+      password: hashedPassword,
+    });
     request['user'] = user;
     return true;
   }

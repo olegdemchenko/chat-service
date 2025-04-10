@@ -1,9 +1,8 @@
 import { Injectable } from '@nestjs/common';
-import bcrypt from 'bcrypt';
-import _ from 'lodash';
 import { UserDocument } from 'src/users/schemas/user.schema';
 import { JwtService } from '@nestjs/jwt';
 import { UsersService } from 'src/users/users.service';
+import { verifyPassword } from 'src/utils';
 
 @Injectable()
 export class AuthService {
@@ -26,12 +25,11 @@ export class AuthService {
     if (!user) {
       return null;
     }
-    try {
-      await bcrypt.compare(password, user.password);
-      return _.omit(user, ['password']);
-    } catch (e) {
+    const isPasswordValid = await verifyPassword(password, user.password);
+    if (!isPasswordValid) {
       return null;
     }
+    return user;
   }
 
   async login(user: UserDocument) {
