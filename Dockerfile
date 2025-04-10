@@ -1,5 +1,5 @@
 FROM node:20-alpine as base
-EXPOSE ${PORT}
+EXPOSE ${WS_PORT} ${HTTP_PORT}
 
 FROM base as dev
 WORKDIR /app
