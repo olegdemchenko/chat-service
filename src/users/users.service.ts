@@ -16,15 +16,15 @@ export class UsersService {
   }
 
   async getUserById(userId: string) {
-    return this.userModel.findOne({ userId }).exec();
+    return this.userModel.findOne({ userId }, '-_id -__v').exec();
   }
 
   async getUserByName(username: string) {
-    return this.userModel.findOne({ name: username }).exec();
+    return this.userModel.findOne({ name: username }, '-_id -__v').exec();
   }
 
   async getUserName(userId: User['userId']) {
-    const { name } = await this.userModel.findOne({ userId }, 'name -_id');
+    const { name } = await this.userModel.findOne({ userId });
     return name;
   }
 
