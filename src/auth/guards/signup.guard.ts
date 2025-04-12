@@ -2,7 +2,7 @@ import {
   CanActivate,
   ExecutionContext,
   Injectable,
-  BadRequestException,
+  ConflictException,
 } from '@nestjs/common';
 import { UsersService } from 'src/users/users.service';
 import { AuthService } from '../auth.service';
@@ -21,11 +21,11 @@ export class SignUpGuard implements CanActivate {
     const newUserDto = request.body as CreateUserDto;
     const areUserCredentialsValid =
       await this.authService.validateNewUserCredentials(
-        newUserDto.name,
+        newUserDto.username,
         newUserDto.email,
       );
     if (!areUserCredentialsValid) {
-      throw new BadRequestException();
+      throw new ConflictException();
     }
     const hashedPassword = await hashPassword(newUserDto.password);
     const user = await this.usersService.create({

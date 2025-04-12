@@ -76,7 +76,7 @@ export class RoomsGateway {
     @ConnectedSocket() client: Socket,
     @MessageBody('roomId') roomId: Room['roomId'],
     @MessageBody('userId') userId: User['userId'],
-    @MessageBody('userName') userName: User['name'],
+    @MessageBody('userName') userName: User['username'],
   ) {
     await this.roomsService.addActiveParticipant(roomId, userId);
     await this.usersService.addRoom(userId, roomId);
@@ -166,7 +166,7 @@ export class RoomsGateway {
     @ConnectedSocket() client: Socket,
     @MessageBody('roomId') roomId: Room['roomId'],
     @MessageBody('userId') userId: User['userId'],
-    @MessageBody('userName') userName: User['name'],
+    @MessageBody('userName') userName: User['username'],
   ) {
     await this.usersService.deleteRoom(userId, roomId);
     const activeParticipants = await this.roomsService.getActiveParticipants(

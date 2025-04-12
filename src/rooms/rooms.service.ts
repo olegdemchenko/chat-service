@@ -92,7 +92,7 @@ export class RoomsService {
     return res.map((room: RoomDocument) => {
       return {
         ..._.omit(room, ['_id']),
-        participants: room.participants.map(({ userId, name }) => ({
+        participants: room.participants.map(({ userId, username: name }) => ({
           userId,
           name,
         })),

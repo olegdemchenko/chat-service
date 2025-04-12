@@ -65,7 +65,7 @@ export class UsersGateway implements OnGatewayConnection, OnGatewayDisconnect {
       page,
     );
     const usersWithStatuses = await Promise.all(
-      users.map(async ({ userId, name }) => ({
+      users.map(async ({ userId, username: name }) => ({
         userId,
         name,
         isOnline: await this.usersProvider.isUserOnline(userId),

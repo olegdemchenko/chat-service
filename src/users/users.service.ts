@@ -20,16 +20,16 @@ export class UsersService {
   }
 
   async getUserByName(username: string) {
-    return this.userModel.findOne({ name: username }, '-_id -__v').exec();
+    return this.userModel.findOne({ username: username }, '-_id -__v').exec();
   }
 
   async getUserName(userId: User['userId']) {
-    const { name } = await this.userModel.findOne({ userId });
+    const { username: name } = await this.userModel.findOne({ userId });
     return name;
   }
 
   async isUsernameTaken(username: string) {
-    const user = await this.userModel.findOne({ name: username }).exec();
+    const user = await this.userModel.findOne({ username: username }).exec();
     return Boolean(user);
   }
 
