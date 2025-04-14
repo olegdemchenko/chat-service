@@ -32,8 +32,7 @@ export class RoomsGateway {
   ) {}
 
   @SubscribeMessage(ChatEvents.getUserRooms)
-  async handleGetUserRooms(@ConnectedSocket() client: Socket) {
-    const userId = await this.usersProvider.getUserId(client.id);
+  async handleGetUserRooms(@MessageBody('userId') userId: User['userId']) {
     const rooms = await this.roomsService.getAllUserCommunications(userId);
     const roomsWithUsersStatuses = await Promise.all(
       rooms.map(async (room) => ({

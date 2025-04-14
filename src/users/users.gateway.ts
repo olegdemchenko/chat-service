@@ -1,9 +1,7 @@
-import { BadRequestException } from '@nestjs/common';
 import {
   WebSocketGateway,
   WebSocketServer,
   MessageBody,
-  ConnectedSocket,
 } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
 import {
@@ -34,23 +32,10 @@ export class UsersGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
   async handleConnection(client: Socket) {
     const { userId } = client.handshake.auth;
-    try {
-      await this.usersProvider.saveUserConnection(userId, client.id);
-      const userRoomsNames = await this.roomsProvider.getUserRoomsNames(userId);
-      client.join(userRoomsNames);
-      client.to(userRoomsNames).emit(ChatEvents.userOnline, userId);
-    } catch (e) {
-      if (e instanceof BadRequestException) {
-        client.emit(ChatEvents.customError, new Error('User token is invalid'));
-        return;
-      }
-      throw e;
-    }
-  }
-
-  @SubscribeMessage(ChatEvents.getUserId)
-  async handleGetUserId(@ConnectedSocket() client: Socket) {
-    return await this.usersProvider.getUserId(client.id);
+    await this.usersProvider.saveUserConnection(userId, client.id);
+    const userRoomsNames = await this.roomsProvider.getUserRoomsNames(userId);
+    client.join(userRoomsNames);
+    client.to(userRoomsNames).emit(ChatEvents.userOnline, userId);
   }
 
   @SubscribeMessage(ChatEvents.findUsers)
