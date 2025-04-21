@@ -15,11 +15,7 @@ import { UsersService } from '../users/users.service';
 import { UsersProvider } from 'src/users/users.provider';
 import { MessagesService } from 'src/messages/messages.service';
 
-@WebSocketGateway(Number(process.env.WS_PORT), {
-  cors: {
-    origin: '*',
-  },
-})
+@WebSocketGateway()
 export class RoomsGateway {
   @WebSocketServer()
   server: Server;

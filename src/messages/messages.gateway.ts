@@ -16,11 +16,7 @@ import { UpdateMessageDto } from './dto/update-message.dto';
 import { Room } from '../rooms/interfaces/room.interface';
 import { RoomsService } from 'src/rooms/rooms.service';
 
-@WebSocketGateway(Number(process.env.WS_PORT), {
-  cors: {
-    origin: '*',
-  },
-})
+@WebSocketGateway()
 export class MessagesGateway {
   @WebSocketServer()
   server: Server;

@@ -4,12 +4,10 @@ services:
       context: .
       target: dev
     ports:
-      - ${WS_PORT}:${WS_PORT}
-      - ${HTTP_PORT}:${HTTP_PORT}
+      - ${PORT}:${PORT}
       - ${DEBUG_PORT}:${DEBUG_PORT}
     environment:
-      - WS_PORT:${WS_PORT}
-      - HTTP_PORT:${HTTP_PORT}
+      - PORT:${PORT}
       - DB_URL=${DB_URL}
     volumes:
       - ./src:/app/src

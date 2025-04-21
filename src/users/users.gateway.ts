@@ -15,11 +15,7 @@ import { UsersService } from './users.service';
 import { User } from './schemas/user.schema';
 import { UsersProvider } from './users.provider';
 
-@WebSocketGateway(Number(process.env.WS_PORT), {
-  cors: {
-    origin: '*',
-  },
-})
+@WebSocketGateway()
 export class UsersGateway implements OnGatewayConnection, OnGatewayDisconnect {
   @WebSocketServer()
   server: Server;
@@ -70,6 +66,6 @@ export class UsersGateway implements OnGatewayConnection, OnGatewayDisconnect {
     const roomsNames = await this.roomsProvider.getUserRoomsNames(userId);
     client.to(roomsNames).emit(ChatEvents.userOffline, userId);
     roomsNames.forEach((room) => client.leave(room));
-    await this.usersProvider.removeUserConnection(client.id);
+    await this.usersProvider.removeUserConnection(userId);
   }
 }
