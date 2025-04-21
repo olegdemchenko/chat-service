@@ -12,9 +12,7 @@ export class UsersProvider {
     await this.storageService.setAdd('active_users', userId);
   }
 
-  async removeUserConnection(clientId: Socket['id']) {
-    const userId = await this.storageService.get(clientId);
-    await this.storageService.delete(clientId);
+  async removeUserConnection(userId: User['userId']) {
     await this.storageService.delete(userId);
     await this.storageService.setRemove('active_users', userId);
   }
