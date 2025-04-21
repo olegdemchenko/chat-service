@@ -56,12 +56,12 @@ export class UsersService {
 
   async findUsers(userId: User['userId'], query: string, page: number) {
     const searchCriteria = {
-      name: { $regex: new RegExp(query, 'i') },
+      username: { $regex: new RegExp(query, 'i') },
       userId: { $ne: userId },
     };
     const foundUsers = await this.userModel.find(
       searchCriteria,
-      'userId name',
+      'userId username',
       {
         skip: page * USERS_PER_PAGE,
         limit: USERS_PER_PAGE,
