@@ -29,6 +29,6 @@ export class AuthController {
   @Get('profile')
   async getProfile(@Request() req) {
     const user = await this.usersService.getUserById(req.user.userId);
-    return _.pick(user, ['name', 'email', 'rooms', 'userId']);
+    return _.pick(user, ['username', 'email', 'userId']);
   }
 }

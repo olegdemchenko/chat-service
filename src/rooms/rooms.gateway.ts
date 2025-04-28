@@ -71,7 +71,7 @@ export class RoomsGateway {
     @ConnectedSocket() client: Socket,
     @MessageBody('roomId') roomId: Room['roomId'],
     @MessageBody('userId') userId: User['userId'],
-    @MessageBody('userName') userName: User['username'],
+    @MessageBody('username') username: User['username'],
   ) {
     await this.roomsService.addActiveParticipant(roomId, userId);
     await this.usersService.addRoom(userId, roomId);
@@ -79,7 +79,7 @@ export class RoomsGateway {
     await client.join(getRoomName(roomId));
     const notification = await this.messagesService.addNewMessage({
       roomId,
-      text: `User "${userName}" joined the conversation`,
+      text: `User "${username}" joined the conversation`,
       author: 'system',
     });
     client
@@ -161,19 +161,21 @@ export class RoomsGateway {
     @ConnectedSocket() client: Socket,
     @MessageBody('roomId') roomId: Room['roomId'],
     @MessageBody('userId') userId: User['userId'],
-    @MessageBody('userName') userName: User['username'],
+    @MessageBody('userName') username: User['username'],
   ) {
     await this.usersService.deleteRoom(userId, roomId);
     const activeParticipants = await this.roomsService.getActiveParticipants(
       roomId,
     );
     if (activeParticipants.length === 1) {
+      const messagesIds = await this.roomsService.getRoomMessages(roomId);
       await this.roomsService.deleteRoom(roomId);
+      await this.messagesService.deleteMessages(messagesIds);
     } else {
       await this.roomsService.deleteActiveParticipant(roomId, userId);
       const notification = await this.messagesService.addNewMessage({
         roomId,
-        text: `User "${userName}" left the conversation`,
+        text: `User "${username}" left the conversation`,
         author: 'system',
       });
       this.server
