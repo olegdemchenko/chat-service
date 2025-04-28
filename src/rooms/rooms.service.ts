@@ -8,6 +8,7 @@ import { MESSAGES_PER_PAGE } from '../constants';
 import { RoomDocument } from './schemas/room.schema';
 import { Message } from 'src/messages/interfaces/message.interface';
 import { MessageDocument } from 'src/messages/schemas/message.schema';
+import { ObjectId } from 'mongoose';
 
 @Injectable()
 export class RoomsService {
@@ -255,5 +256,10 @@ export class RoomsService {
 
   async deleteRoom(roomId: Room['roomId']) {
     return await this.roomModel.deleteOne({ roomId });
+  }
+
+  async getRoomMessages(roomId: Room['roomId']) {
+    const res = await this.roomModel.findOne({ roomId }, 'messages');
+    return res.messages as unknown as string[];
   }
 }

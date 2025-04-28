@@ -1,4 +1,4 @@
-import { Model } from 'mongoose';
+import { Model, ObjectId } from 'mongoose';
 import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { User } from '../users/schemas/user.schema';
@@ -51,6 +51,10 @@ export class MessagesService {
 
   async deleteMessage(messageId: Message['messageId']) {
     return await this.messageModel.deleteOne({ messageId });
+  }
+
+  async deleteMessages(messagesIds: Message['messageId'][]) {
+    return await this.messageModel.deleteMany({ messageId: messagesIds });
   }
 
   async markMessagesAsRead(
